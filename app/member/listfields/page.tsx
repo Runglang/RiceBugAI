@@ -55,7 +55,9 @@ export default function MyFieldsPage({ onAnalyzeField }: MyFieldsPageProps) {
       const data: RiceField[] = await res.json();
       setFields(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ");
+      setError(
+        err instanceof Error ? err.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +90,11 @@ export default function MyFieldsPage({ onAnalyzeField }: MyFieldsPageProps) {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ");
+          setError(
+            err instanceof Error
+              ? err.message
+              : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ",
+          );
           setIsLoading(false);
         }
       }
@@ -112,16 +118,19 @@ export default function MyFieldsPage({ onAnalyzeField }: MyFieldsPageProps) {
 
     setIsDeletingId(fieldID);
     try {
-      const res = await fetch(`${API_URL}/api/v1/members/${memberID}/fields/${fieldID}`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(
+        `${API_URL}/api/v1/members/${memberID}/fields/${fieldID}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!res.ok) {
         throw new Error("ลบข้อมูลแปลงนาไม่สำเร็จ");
       }
 
       // รีโหลดข้อมูลหลังจากลบสำเร็จ
-      setFields(fields.filter(f => f.fieldID !== fieldID));
+      setFields(fields.filter((f) => f.fieldID !== fieldID));
     } catch (err) {
       alert(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการลบ");
     } finally {
@@ -139,14 +148,14 @@ export default function MyFieldsPage({ onAnalyzeField }: MyFieldsPageProps) {
         <div className="flex items-start justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">แปลงนาของฉัน</h1>
-            <p className="mt-1 text-sm text-green-700">
+            <p className="mt-1 text-sm text-gray-500">
               ภาพรวมและการจัดการข้อมูลแปลงปลูก
             </p>
           </div>
           <button
             type="button"
             onClick={() => router.push("/member/addfield")}
-            className="h-12 px-5 rounded-xl bg-green-500 text-white flex items-center gap-2 text-sm font-semibold shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:bg-green-600 transition-colors whitespace-nowrap"
+            className="h-12 px-5 rounded-lg bg-green-500 text-white flex items-center gap-2 text-sm font-semibold shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:bg-green-600 transition-colors whitespace-nowrap"
           >
             <Plus size={20} strokeWidth={2.5} />
             เพิ่มแปลงนาใหม่
@@ -183,11 +192,15 @@ export default function MyFieldsPage({ onAnalyzeField }: MyFieldsPageProps) {
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
               <Plus className="w-8 h-8 text-gray-300" />
             </div>
-            <p className="text-sm font-semibold text-gray-600">ยังไม่มีแปลงนา</p>
-            <p className="text-xs text-gray-400 mt-1 mb-6">เริ่มเพิ่มแปลงแรกของคุณเพื่อเข้าสู่ระบบประเมิน</p>
+            <p className="text-sm font-semibold text-gray-600">
+              ยังไม่มีแปลงนา
+            </p>
+            <p className="text-xs text-gray-400 mt-1 mb-6">
+              เริ่มเพิ่มแปลงแรกของคุณเพื่อเข้าสู่ระบบประเมิน
+            </p>
             <button
               onClick={() => router.push("/member/addfield")}
-              className="px-5 py-2.5 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
             >
               เพิ่มแปลงนาเลย
             </button>
@@ -200,7 +213,7 @@ export default function MyFieldsPage({ onAnalyzeField }: MyFieldsPageProps) {
             {fields.map((field, index) => (
               <div
                 key={field.fieldID}
-                className="rounded-xl border border-gray-200 bg-white px-7 py-5 shadow-sm hover:shadow-md transition-shadow group relative"
+                className="rounded-xl border border-gray-200 bg-white px-7 py-5 transition-shadow group relative"
               >
                 {/* ปุ่มลบ (อยู่มุมขวาบน) */}
                 <button
@@ -231,23 +244,32 @@ export default function MyFieldsPage({ onAnalyzeField }: MyFieldsPageProps) {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex flex-wrap gap-x-12 gap-y-4">
                     <div>
-                      <p className="text-xs font-semibold text-gray-400 mb-1 tracking-wide uppercase">วันที่ปลูก</p>
+                      <p className="text-xs font-semibold text-gray-400 mb-1 tracking-wide uppercase">
+                        วันที่ปลูก
+                      </p>
                       <p className="text-sm font-bold text-gray-800">
-                        {new Date(field.plantingDate).toLocaleDateString("th-TH", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric"
-                        })}
+                        {new Date(field.plantingDate).toLocaleDateString(
+                          "th-TH",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-gray-400 mb-1 tracking-wide uppercase">ขนาดพื้นที่</p>
+                      <p className="text-xs font-semibold text-gray-400 mb-1 tracking-wide uppercase">
+                        ขนาดพื้นที่
+                      </p>
                       <p className="text-sm font-bold text-gray-800">
                         {formatArea(field.areaSize, field.areaUnit)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-gray-400 mb-1 tracking-wide uppercase">อายุข้าว</p>
+                      <p className="text-xs font-semibold text-gray-400 mb-1 tracking-wide uppercase">
+                        อายุข้าว
+                      </p>
                       <p className="text-sm font-bold text-gray-800 text-green-700">
                         {field.riceAge} วัน
                       </p>
@@ -257,7 +279,7 @@ export default function MyFieldsPage({ onAnalyzeField }: MyFieldsPageProps) {
                   <button
                     type="button"
                     onClick={() => onAnalyzeField?.(field)}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-sm font-bold text-gray-800 hover:bg-gray-100 hover:border-gray-300 transition-all whitespace-nowrap"
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all whitespace-nowrap"
                   >
                     เริ่มประเมิน
                   </button>

@@ -56,16 +56,11 @@ export default function PlantingRecordForm() {
     }
   }, [router]);
 
-  const handleChange = (
-    field: keyof PlantingRecordFormData,
-    value: string
-  ) => {
+  const handleChange = (field: keyof PlantingRecordFormData, value: string) => {
     setForm((prev) => ({
       ...prev,
       [field]:
-        field === "areaRai" ||
-        field === "areaNgan" ||
-        field === "areaSqWah"
+        field === "areaRai" || field === "areaNgan" || field === "areaSqWah"
           ? value === ""
             ? null
             : Number(value)
@@ -77,8 +72,7 @@ export default function PlantingRecordForm() {
     const next: typeof errors = {};
     if (!form.fieldName.trim())
       next.fieldName = "กรุณาระบุสถานที่ปลูกข้าว (ชื่อแปลง)";
-    if (!form.plantingDate)
-      next.plantingDate = "กรุณาระบุวันที่เริ่มปลูกข้าว";
+    if (!form.plantingDate) next.plantingDate = "กรุณาระบุวันที่เริ่มปลูกข้าว";
 
     const rai = form.areaRai || 0;
     const ngan = form.areaNgan || 0;
@@ -112,14 +106,11 @@ export default function PlantingRecordForm() {
         areaUnit: "ไร่",
       };
 
-      const res = await fetch(
-        `${API_URL}/api/v1/members/${memberID}/fields`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetch(`${API_URL}/api/v1/members/${memberID}/fields`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       if (!res.ok) {
         throw new Error("บันทึกข้อมูลแปลงข้าวไม่สำเร็จ");
@@ -128,7 +119,7 @@ export default function PlantingRecordForm() {
       router.push("/member/dashboard");
     } catch (err) {
       setApiError(
-        err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึก"
+        err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึก",
       );
     } finally {
       setIsSubmitting(false);
@@ -139,11 +130,11 @@ export default function PlantingRecordForm() {
     <div className="min-h-screen bg-[#F3F5F1] flex items-start justify-center p-6 pt-12">
       <div className="w-full max-w-3xl bg-white rounded-xl border border-gray-200 shadow-sm">
         {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-gray-100">
+        <div className="px-8 pt-8 pb-6 border-b border-gray-200">
           <h1 className="text-2xl font-bold text-gray-900">
             บันทึกการปลูกใหม่
           </h1>
-          <p className="mt-2 text-sm text-green-700 leading-relaxed">
+          <p className="mt-2 text-sm text-gray-500 leading-relaxed">
             บันทึกข้อมูลการปลูกในรอบปัจจุบันเพื่อนำไปใช้ในการวิเคราะห์และประมวลผลข้อมูลต่อไปเพื่อสนับสนุนการใช้งานและการติดตามผลผลิตอย่างมีประสิทธิภาพ
           </p>
         </div>
@@ -160,37 +151,33 @@ export default function PlantingRecordForm() {
           {/* Location / Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 ชื่อแปลง / สถานที่ปลูกข้าว
               </label>
               <input
                 type="text"
                 value={form.fieldName}
                 onChange={(e) => handleChange("fieldName", e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="เช่น แปลงหลังบ้าน"
                 disabled={isSubmitting}
               />
               {errors.fieldName && (
-                <p className="mt-1 text-xs text-red-600">
-                  {errors.fieldName}
-                </p>
+                <p className="mt-1 text-xs text-red-600">{errors.fieldName}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 วันที่เริ่มปลูกข้าว
               </label>
               <div className="relative">
                 <input
                   type="date"
                   value={form.plantingDate}
-                  onChange={(e) =>
-                    handleChange("plantingDate", e.target.value)
-                  }
+                  onChange={(e) => handleChange("plantingDate", e.target.value)}
                   disabled={isSubmitting}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent [color-scheme:light]"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent [color-scheme:light]"
                 />
                 <Calendar
                   size={18}
@@ -205,7 +192,7 @@ export default function PlantingRecordForm() {
             </div>
           </div>
 
-          <hr className="border-gray-100" />
+          <hr className="border-gray-200" />
 
           {/* Cultivated area */}
           <div>
@@ -215,75 +202,68 @@ export default function PlantingRecordForm() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   ไร่ (RAI)
                 </label>
                 <input
                   type="number"
                   min={0}
                   value={form.areaRai ?? ""}
-                  onChange={(e) =>
-                    handleChange("areaRai", e.target.value)
-                  }
+                  onChange={(e) => handleChange("areaRai", e.target.value)}
                   placeholder="0"
                   disabled={isSubmitting}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
                 {errors.areaRai && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.areaRai}
-                  </p>
+                  <p className="mt-1 text-xs text-red-600">{errors.areaRai}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   งาน (NGAN)
                 </label>
                 <input
                   type="number"
                   min={0}
                   value={form.areaNgan ?? ""}
-                  onChange={(e) =>
-                    handleChange("areaNgan", e.target.value)
-                  }
+                  onChange={(e) => handleChange("areaNgan", e.target.value)}
                   placeholder="0"
                   disabled={isSubmitting}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   ตารางวา (SQ. WAH)
                 </label>
                 <input
                   type="number"
                   min={0}
                   value={form.areaSqWah ?? ""}
-                  onChange={(e) =>
-                    handleChange("areaSqWah", e.target.value)
-                  }
+                  onChange={(e) => handleChange("areaSqWah", e.target.value)}
                   placeholder="0"
                   disabled={isSubmitting}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-black focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
             </div>
 
             <p className="mt-3 text-xs text-gray-500">
-              * ระบบจะนำ ไร่, งาน, ตารางวา มารวมกันเพื่อคำนวณปริมาณสารเคมีแบบอัตโนมัติ
+              * ระบบจะนำ ไร่, งาน, ตารางวา
+              มารวมกันเพื่อคำนวณปริมาณสารเคมีแบบอัตโนมัติ
             </p>
           </div>
         </div>
 
         {/* Footer actions */}
-        <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3">
+        <div className="px-8 py-6 border-t border-gray-200 flex justify-end gap-3">
           <button
             type="button"
             onClick={() => router.push("/member/dashboard")}
             disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-lg border border-gray-300 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-colors disabled:opacity-60"
+            className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60"
           >
             ยกเลิก
           </button>
@@ -292,7 +272,7 @@ export default function PlantingRecordForm() {
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-lg bg-green-500 text-sm font-semibold text-white shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:bg-green-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isSubmitting ? (
               <>

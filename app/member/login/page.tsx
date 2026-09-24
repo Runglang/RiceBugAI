@@ -46,17 +46,17 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f4f8f5] flex items-center justify-center px-4">
+    <main className="min-h-screen bg-[#F3F5F1] flex items-center justify-center px-4">
       <div className="w-full max-w-[540px]">
 
         {/* Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-10 py-12">
+        <div className="bg-white rounded-2xl border border-gray-200 px-10 py-12">
 
           {/* Header Icon */}
           <div className="flex justify-center mb-7">
-            <div className="w-[78px] h-[78px] rounded-full bg-[#e7fce9] flex items-center justify-center">
+            <div className="w-[78px] h-[78px] rounded-full bg-green-50 flex items-center justify-center">
               <Lock
-                className="w-9 h-9 text-black"
+                className="w-9 h-9 text-green-600"
                 strokeWidth={2.5}
               />
             </div>
@@ -64,11 +64,11 @@ export default function LoginPage() {
 
           {/* Title */}
           <div className="text-center mb-10">
-            <h1 className="text-[28px] font-bold text-slate-900">
+            <h1 className="text-[28px] font-bold text-gray-900">
               เข้าสู่ระบบสมาชิก
             </h1>
 
-            <p className="mt-2 text-[16px] text-slate-400">
+            <p className="mt-2 text-[16px] text-gray-400">
               เข้าถึงแดชบอร์ดตรวจจับศัตรูพืชด้วยระบบ AI ของคุณ
             </p>
           </div>
@@ -87,14 +87,14 @@ export default function LoginPage() {
             <div className="mb-6">
               <label
                 htmlFor="username"
-                className="block text-[17px] font-semibold text-slate-800 mb-2"
+                className="block text-[17px] font-semibold text-gray-800 mb-2"
               >
                 Username
               </label>
 
               <div className="relative">
                 <User
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
                   strokeWidth={2}
                 />
 
@@ -109,18 +109,18 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className="
                     w-full
-                    h-[50px]
-                    rounded-xl
-                    border border-slate-200
+                    py-3
+                    rounded-lg
+                    border border-gray-300
                     bg-white
                     pl-12 pr-4
                     text-gray-900
-                    placeholder:text-slate-400
+                    placeholder:text-gray-400
                     outline-none
                     transition
-                    focus:border-emerald-400
+                    focus:border-transparent
                     focus:ring-2
-                    focus:ring-emerald-100
+                    focus:ring-green-500
                   "
                 />
               </div>
@@ -130,14 +130,14 @@ export default function LoginPage() {
             <div className="mb-6">
               <label
                 htmlFor="password"
-                className="block text-[17px] font-semibold text-slate-800 mb-2"
+                className="block text-[17px] font-semibold text-gray-800 mb-2"
               >
                 Password
               </label>
 
               <div className="relative">
                 <Key
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
                   strokeWidth={2}
                 />
 
@@ -152,18 +152,18 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className="
                     w-full
-                    h-[50px]
-                    rounded-xl
-                    border border-slate-200
+                    py-3
+                    rounded-lg
+                    border border-gray-300
                     bg-white
                     pl-12 pr-12
                     text-gray-900
-                    placeholder:text-slate-400
+                    placeholder:text-gray-400
                     outline-none
                     transition
-                    focus:border-emerald-400
+                    focus:border-transparent
                     focus:ring-2
-                    focus:ring-emerald-100
+                    focus:ring-green-500
                   "
                 />
 
@@ -175,8 +175,8 @@ export default function LoginPage() {
                     right-4
                     top-1/2
                     -translate-y-1/2
-                    text-slate-400
-                    hover:text-slate-600
+                    text-gray-400
+                    hover:text-gray-600
                     transition
                   "
                   aria-label={
@@ -202,13 +202,13 @@ export default function LoginPage() {
                   className="
                     w-5 h-5
                     rounded-md
-                    border-slate-300
-                    text-emerald-600
-                    focus:ring-emerald-500
+                    border-gray-300
+                    text-green-500
+                    focus:ring-green-500
                   "
                 />
 
-                <span className="text-[16px] text-slate-500">
+                <span className="text-[16px] text-gray-500">
                   จดจำฉันไว้ในอุปกรณ์นี้
                 </span>
               </label>
@@ -220,12 +220,13 @@ export default function LoginPage() {
               disabled={isLoading}
               className="
                 w-full
-                h-[50px]
-                rounded-xl
-                bg-[#d1d5db]
-                hover:bg-[#c7cbd1]
-                text-[#173d22]
-                font-bold
+                py-3
+                rounded-lg
+                bg-green-500
+                hover:bg-green-600
+                text-white
+                font-semibold
+                shadow-[0_0_20px_rgba(34,197,94,0.4)]
                 text-[17px]
                 transition
                 disabled:opacity-60
@@ -246,7 +247,7 @@ export default function LoginPage() {
           </form>
           {/* Register Link */}
           <div className="text-center pt-2">
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-gray-500">
               ยังไม่มีบัญชีใช่ไหม?{' '}
             </span>
 
@@ -255,8 +256,8 @@ export default function LoginPage() {
               className="
                   text-sm
                   font-semibold
-                  text-emerald-600
-                  hover:text-emerald-700
+                  text-green-600
+                  hover:text-green-700
                   transition
                 "
             >

@@ -66,26 +66,26 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f4f8f5] flex items-center justify-center px-4 py-10">
+    <main className="min-h-screen bg-[#F3F5F1] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-[540px]">
 
         {/* Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-10 py-12">
+        <div className="bg-white rounded-2xl border border-gray-200 px-10 py-12">
 
           {/* Header Title */}
           <div className="text-center mb-10">
-            <h1 className="text-[28px] font-bold text-slate-900">
+            <h1 className="text-[28px] font-bold text-gray-900">
               Create an Account
             </h1>
 
-            <p className="mt-2 text-[16px] text-slate-400">
+            <p className="mt-2 text-[16px] text-gray-400">
               Please enter your details to register for access.
             </p>
           </div>
 
           {/* Success Message */}
           {success && (
-            <div className="mb-6 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-sm text-emerald-700 text-center">
+            <div className="mb-6 p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-700 text-center">
               สมัครสมาชิกสำเร็จ! กำลังพาไปหน้าเข้าสู่ระบบ...
             </div>
           )}
@@ -104,14 +104,14 @@ export default function RegisterPage() {
             <div className="mb-6">
               <label
                 htmlFor="username"
-                className="block text-[17px] font-semibold text-slate-800 mb-2"
+                className="block text-[17px] font-semibold text-gray-800 mb-2"
               >
                 Username *
               </label>
 
               <div className="relative">
                 <User
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
                   strokeWidth={2}
                 />
 
@@ -126,18 +126,18 @@ export default function RegisterPage() {
                   disabled={isLoading || success}
                   className="
                     w-full
-                    h-[50px]
-                    rounded-xl
-                    border border-slate-200
+                    py-3
+                    rounded-lg
+                    border border-gray-300
                     bg-white
                     pl-12 pr-4
                     text-gray-900
-                    placeholder:text-slate-400
+                    placeholder:text-gray-400
                     outline-none
                     transition
-                    focus:border-emerald-400
+                    focus:border-transparent
                     focus:ring-2
-                    focus:ring-emerald-100
+                    focus:ring-green-500
                     disabled:opacity-60
                   "
                 />
@@ -148,14 +148,14 @@ export default function RegisterPage() {
             <div className="mb-6">
               <label
                 htmlFor="email"
-                className="block text-[17px] font-semibold text-slate-800 mb-2"
+                className="block text-[17px] font-semibold text-gray-800 mb-2"
               >
                 Email Address *
               </label>
 
               <div className="relative">
                 <Mail
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
                   strokeWidth={2}
                 />
 
@@ -170,18 +170,18 @@ export default function RegisterPage() {
                   disabled={isLoading || success}
                   className="
                     w-full
-                    h-[50px]
-                    rounded-xl
-                    border border-slate-200
+                    py-3
+                    rounded-lg
+                    border border-gray-300
                     bg-white
                     pl-12 pr-4
                     text-gray-900
-                    placeholder:text-slate-400
+                    placeholder:text-gray-400
                     outline-none
                     transition
-                    focus:border-emerald-400
+                    focus:border-transparent
                     focus:ring-2
-                    focus:ring-emerald-100
+                    focus:ring-green-500
                     disabled:opacity-60
                   "
                 />
@@ -192,14 +192,14 @@ export default function RegisterPage() {
             <div className="mb-6">
               <label
                 htmlFor="address"
-                className="block text-[17px] font-semibold text-slate-800 mb-2"
+                className="block text-[17px] font-semibold text-gray-800 mb-2"
               >
                 Research Location / Address *
               </label>
 
               <div className="relative">
                 <MapPin
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
                   strokeWidth={2}
                 />
 
@@ -214,18 +214,18 @@ export default function RegisterPage() {
                   disabled={isLoading || success}
                   className="
                     w-full
-                    h-[50px]
-                    rounded-xl
-                    border border-slate-200
+                    py-3
+                    rounded-lg
+                    border border-gray-300
                     bg-white
                     pl-12 pr-4
                     text-gray-900
-                    placeholder:text-slate-400
+                    placeholder:text-gray-400
                     outline-none
                     transition
-                    focus:border-emerald-400
+                    focus:border-transparent
                     focus:ring-2
-                    focus:ring-emerald-100
+                    focus:ring-green-500
                     disabled:opacity-60
                   "
                 />
@@ -236,14 +236,14 @@ export default function RegisterPage() {
             <div className="mb-6">
               <label
                 htmlFor="password"
-                className="block text-[17px] font-semibold text-slate-800 mb-2"
+                className="block text-[17px] font-semibold text-gray-800 mb-2"
               >
                 Password *
               </label>
 
               <div className="relative">
                 <Lock
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
                   strokeWidth={2}
                 />
 
@@ -258,18 +258,18 @@ export default function RegisterPage() {
                   disabled={isLoading || success}
                   className="
                     w-full
-                    h-[50px]
-                    rounded-xl
-                    border border-slate-200
+                    py-3
+                    rounded-lg
+                    border border-gray-300
                     bg-white
                     pl-12 pr-12
                     text-gray-900
-                    placeholder:text-slate-400
+                    placeholder:text-gray-400
                     outline-none
                     transition
-                    focus:border-emerald-400
+                    focus:border-transparent
                     focus:ring-2
-                    focus:ring-emerald-100
+                    focus:ring-green-500
                     disabled:opacity-60
                   "
                 />
@@ -277,7 +277,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
@@ -288,7 +288,7 @@ export default function RegisterPage() {
                 </button>
               </div>
 
-              <p className="mt-1.5 text-xs text-slate-400">
+              <p className="mt-1.5 text-xs text-gray-400">
                 ต้องมีอย่างน้อย 8 ตัวอักษร
               </p>
             </div>
@@ -303,14 +303,14 @@ export default function RegisterPage() {
                 <div
                   className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                     acceptedTerms
-                      ? 'bg-emerald-500 border-emerald-500'
-                      : 'border-slate-300 group-hover:border-slate-400'
+                      ? 'bg-green-500 border-green-500'
+                      : 'border-gray-300 group-hover:border-gray-400'
                   }`}
                 >
                   {acceptedTerms && <Check className="w-3.5 h-3.5 text-white" />}
                 </div>
 
-                <span className="text-sm text-slate-500 leading-relaxed">
+                <span className="text-sm text-gray-500 leading-relaxed">
                   ฉันยอมรับข้อกำหนดในการให้บริการและนโยบายความเป็นส่วนตัว
                 </span>
               </button>
@@ -322,12 +322,13 @@ export default function RegisterPage() {
               disabled={isLoading || success}
               className="
                 w-full
-                h-[50px]
-                rounded-xl
-                bg-[#d1d5db]
-                hover:bg-[#c7cbd1]
-                text-[#173d22]
-                font-bold
+                py-3
+                rounded-lg
+                bg-green-500
+                hover:bg-green-600
+                text-white
+                font-semibold
+                shadow-[0_0_20px_rgba(34,197,94,0.4)]
                 text-[17px]
                 transition
                 disabled:opacity-60
@@ -349,13 +350,13 @@ export default function RegisterPage() {
 
           {/* Footer Link to Login */}
           <div className="text-center pt-4">
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-gray-500">
               มีบัญชีอยู่แล้วใช่ไหม?{' '}
             </span>
 
             <Link
               href="/member/login"
-              className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition"
+              className="text-sm font-semibold text-green-600 hover:text-green-700 transition"
             >
               เข้าสู่ระบบ
             </Link>

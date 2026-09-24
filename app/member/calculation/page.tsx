@@ -323,7 +323,7 @@ export default function ChemicalCalculatorPage() {
                   type="button"
                   onClick={handleCalculate}
                   disabled={isCalculating}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-gray-200 text-gray-800 text-sm font-semibold py-3.5 hover:bg-gray-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-green-500 text-white text-sm font-semibold py-3 shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:bg-green-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isCalculating ? (
                     <Loader2 size={18} className="animate-spin" />
@@ -336,7 +336,7 @@ export default function ChemicalCalculatorPage() {
                   type="button"
                   onClick={handleClear}
                   disabled={isCalculating}
-                  className="px-8 rounded-lg border border-gray-300 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="px-8 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   ล้าง
                 </button>

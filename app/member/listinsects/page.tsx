@@ -204,26 +204,26 @@ export default function MemberListInsects() {
   const rangeEnd = Math.min(currentPageSafe * ITEMS_PER_PAGE, filteredInsects.length);
 
   return (
-    <div className="min-h-screen bg-[#f7f9fa] p-4 sm:p-8 md:p-12 font-sans text-slate-800">
+    <div className="min-h-screen bg-[#F3F5F1] p-4 sm:p-8 md:p-12 font-sans text-gray-800">
       <div className="max-w-7xl mx-auto">
 
         {/* Header Section */}
         <div className="mb-10">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3 tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 tracking-tight">
             สารานุกรมแมลงศัตรูพืชข้าว
           </h1>
-          <p className="text-sm md:text-base text-slate-500 max-w-2xl leading-relaxed">
+          <p className="text-sm md:text-base text-gray-500 max-w-2xl leading-relaxed">
             ค้นหาและศึกษาข้อมูลแมลงศัตรูพืชที่พบในนาข้าว
             เพื่อทำความเข้าใจลักษณะทางกายภาพ พฤติกรรม และวิธีรับมือ
           </p>
         </div>
 
         {/* Search & Filter Bar */}
-        <div className="bg-white p-4 rounded-xl flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between border border-slate-200 shadow-sm mb-8">
+        <div className="bg-white p-4 rounded-xl flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between border border-gray-200 mb-8">
 
           {/* Search */}
           <div className="relative w-full lg:w-[45%]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -trangray-y-1/2" />
             <input
               type="text"
               value={searchTerm}
@@ -232,13 +232,13 @@ export default function MemberListInsects() {
                 setPage(1);
               }}
               placeholder="ค้นหาตามชื่อสามัญ ชื่อวิทยาศาสตร์ หรือชนิดของศัตรูพืช..."
-              className="w-full pl-10 pr-4 py-2.5 bg-[#f8fafc] border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-slate-400 focus:bg-white transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-gray-400 focus:bg-white transition-colors"
             />
           </div>
 
           {/* Filters */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
-            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">
+            <span className="text-[11px] font-bold text-gray-400 whitespace-nowrap">
               กรองตามขั้นตอน:
             </span>
             <div className="flex gap-2">
@@ -251,8 +251,8 @@ export default function MemberListInsects() {
                   }}
                   className={`px-4 py-2 text-xs font-bold rounded-full whitespace-nowrap transition-colors ${
                     filter === selectedStage
-                      ? 'bg-[#1e293b] text-white'
-                      : 'bg-[#f1f5f9] text-slate-600 hover:bg-[#e2e8f0]'
+                      ? 'bg-gray-800 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
                   {filter}
@@ -264,7 +264,7 @@ export default function MemberListInsects() {
 
         {/* Loading */}
         {loading && (
-          <div className="flex items-center justify-center gap-2 py-20 text-slate-400 text-sm">
+          <div className="flex items-center justify-center gap-2 py-20 text-gray-400 text-sm">
             <Loader2 className="w-5 h-5 animate-spin" />
             กำลังโหลดข้อมูล...
           </div>
@@ -272,12 +272,12 @@ export default function MemberListInsects() {
 
         {/* Error */}
         {!loading && error && (
-          <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center bg-white rounded-xl border border-slate-200">
+          <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center bg-white rounded-xl border border-gray-200">
             <AlertCircle className="w-8 h-8 text-red-400" />
             <p className="text-sm text-red-600 font-medium">{error}</p>
             <button
               onClick={fetchInsects}
-              className="px-4 py-1.5 text-xs font-semibold text-slate-700 border border-slate-200 rounded-md hover:bg-slate-50 transition-colors"
+              className="px-4 py-1.5 text-xs bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
             >
               ลองใหม่อีกครั้ง
             </button>
@@ -286,9 +286,9 @@ export default function MemberListInsects() {
 
         {/* Empty */}
         {!loading && !error && filteredInsects.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-2 py-20 text-center bg-white rounded-xl border border-slate-200">
-            <Bug className="w-8 h-8 text-slate-300" />
-            <p className="text-sm text-slate-500">
+          <div className="flex flex-col items-center justify-center gap-2 py-20 text-center bg-white rounded-xl border border-gray-200">
+            <Bug className="w-8 h-8 text-gray-300" />
+            <p className="text-sm text-gray-500">
               {insects.length === 0
                 ? 'ยังไม่มีข้อมูลแมลงในระบบ'
                 : 'ไม่พบแมลงที่ตรงกับคำค้นหาหรือตัวกรอง'}
@@ -302,7 +302,7 @@ export default function MemberListInsects() {
             {pagedInsects.map((insect) => (
               <div
                 key={insect.insectID}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 flex flex-col h-full group hover:shadow-md transition-all duration-300"
+                className="bg-white rounded-2xl overflow-hidden border border-gray-200 flex flex-col h-full group transition-all duration-300"
               >
                 {/* Image */}
                 <div
@@ -325,26 +325,26 @@ export default function MemberListInsects() {
 
                 {/* Card Content */}
                 <div className="p-5 flex flex-col flex-grow">
-                  <span className="text-[10px] font-bold text-slate-400 tracking-wide mb-1 uppercase">
+                  <span className="text-[10px] font-bold text-gray-400 tracking-wide mb-1 uppercase">
                     {insect.scientificName}
                   </span>
-                  <h3 className="text-[15px] font-bold text-slate-900 mb-2">
+                  <h3 className="text-[15px] font-bold text-gray-900 mb-2">
                     {insect.insectName}
                   </h3>
-                  <p className="text-xs text-slate-500 line-clamp-2 mb-6 flex-grow leading-relaxed">
+                  <p className="text-xs text-gray-500 line-clamp-2 mb-6 flex-grow leading-relaxed">
                     {insect.insectDes}
                   </p>
 
                   {/* Tags */}
                   <div className="flex items-center gap-1.5 flex-wrap mb-4">
-                    <span className="text-[11px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded">
+                    <span className="text-[11px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">
                       {insect.riceGrowthStages?.length
                         ? insect.riceGrowthStages.map((s) => s.stageName).join(', ')
                         : 'ไม่ระบุระยะ'}
                     </span>
                     <span
                       className={`text-[11px] font-bold px-2 py-1 rounded ${
-                        DANGER_STYLE[insect.dangerLevel] ?? 'bg-slate-100 text-slate-600'
+                        DANGER_STYLE[insect.dangerLevel] ?? 'bg-gray-100 text-gray-600'
                       }`}
                     >
                       {DANGER_LABEL[insect.dangerLevel] ?? insect.dangerLevel}
@@ -354,7 +354,7 @@ export default function MemberListInsects() {
                   {/* View Details Button */}
                   <button
                     onClick={() => router.push(`/member/viewinsect?id=${insect.insectID}`)}
-                    className="w-full mt-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#f8fafc] group-hover:bg-[#1e293b] group-hover:text-white text-slate-600 text-xs font-bold rounded-lg border border-slate-200 group-hover:border-transparent transition-all"
+                    className="w-full mt-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 group-hover:bg-gray-800 group-hover:text-white text-gray-600 text-xs font-bold rounded-lg border border-gray-200 group-hover:border-transparent transition-all"
                   >
                     <Eye className="w-4 h-4" />
                     ดูรายละเอียด
@@ -367,8 +367,8 @@ export default function MemberListInsects() {
 
         {/* Pagination */}
         {!loading && !error && filteredInsects.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200 pt-6">
-            <span className="text-sm font-semibold text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-6">
+            <span className="text-sm font-semibold text-gray-500">
               แสดงผลลัพธ์ {rangeStart} ถึง {rangeEnd} จากทั้งหมด {filteredInsects.length} รายการ
             </span>
 
@@ -376,14 +376,14 @@ export default function MemberListInsects() {
               <button
                 onClick={() => goToPage(currentPageSafe - 1)}
                 disabled={currentPageSafe === 1}
-                className="w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-400 bg-white hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                className="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
               {pageNumbers.map((p, idx) =>
                 p === 'ellipsis' ? (
-                  <div key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-slate-400 text-sm font-bold tracking-widest">
+                  <div key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm font-bold tracking-widest">
                     ...
                   </div>
                 ) : (
@@ -393,7 +393,7 @@ export default function MemberListInsects() {
                     className={
                       p === currentPageSafe
                         ? 'w-8 h-8 flex items-center justify-center rounded border border-emerald-200 bg-[#dcfce7] text-[#166534] font-bold text-sm'
-                        : 'w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-600 font-bold text-sm bg-white hover:bg-slate-50 transition-colors'
+                        : 'w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-600 font-bold text-sm bg-white hover:bg-gray-50 transition-colors'
                     }
                   >
                     {p}
@@ -404,7 +404,7 @@ export default function MemberListInsects() {
               <button
                 onClick={() => goToPage(currentPageSafe + 1)}
                 disabled={currentPageSafe === totalPages}
-                className="w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                className="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

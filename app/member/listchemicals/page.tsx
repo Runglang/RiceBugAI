@@ -197,37 +197,37 @@ export default function ChemicalListPage() {
   const rangeEnd = Math.min(currentPageSafe * ROWS_PER_PAGE, filteredChemicals.length);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-6 sm:p-10 font-sans text-slate-800 flex justify-center">
+    <div className="min-h-screen bg-[#F3F5F1] p-6 sm:p-10 font-sans text-gray-800 flex justify-center">
       <div className="max-w-6xl w-full">
 
         {/* Breadcrumb & Header */}
         <div className="mb-8">
-          <nav className="flex items-center text-sm font-semibold text-slate-500 mb-6 gap-2">
+          <nav className="flex items-center text-sm font-semibold text-gray-500 mb-6 gap-2">
             <span
               onClick={() => router.push('/')}
-              className="hover:text-slate-800 cursor-pointer transition-colors"
+              className="hover:text-gray-800 cursor-pointer transition-colors"
             >
               หน้าแรก
             </span>
-            <span className="text-slate-400">/</span>
-            <span className="text-slate-900">สารเคมี</span>
+            <span className="text-gray-400">/</span>
+            <span className="text-gray-900">สารเคมี</span>
           </nav>
 
-          <h1 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">
+          <h1 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">
             รายการเคมีกำจัดแมลง
           </h1>
-          <p className="text-sm text-slate-500 max-w-3xl leading-relaxed font-medium">
+          <p className="text-sm text-gray-500 max-w-3xl leading-relaxed font-medium">
             บริหารจัดการและทบทวนการใช้สารเคมีทางการเกษตรที่เหมาะสมสำหรับนาข้าว
             ติดตามส่วนประกอบสำคัญ และตรวจสอบระดับความเป็นพิษ
           </p>
         </div>
 
         {/* Action Bar: Search & Filters */}
-        <div className="bg-white rounded-xl p-4 flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center border border-slate-200/80 shadow-sm mb-6">
+        <div className="bg-white rounded-xl p-4 flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center border border-gray-200 mb-6">
 
           {/* Search */}
           <div className="relative w-full lg:w-1/3">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -trangray-y-1/2" />
             <input
               type="text"
               value={searchTerm}
@@ -236,7 +236,7 @@ export default function ChemicalListPage() {
                 setPage(1);
               }}
               placeholder="ค้นหาชื่อสารเคมี, ส่วนประกอบ..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-slate-400 focus:bg-white transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-gray-400 focus:bg-white transition-colors"
             />
           </div>
 
@@ -247,21 +247,21 @@ export default function ChemicalListPage() {
             <div className="relative toxicity-dropdown flex-1 lg:flex-none">
               <button
                 onClick={() => setIsToxicityDropdownOpen(!isToxicityDropdownOpen)}
-                className="w-full flex items-center justify-between gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-100 transition-colors"
+                className="w-full flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-100 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-slate-500" />
+                  <SlidersHorizontal className="w-4 h-4 text-gray-500" />
                   <span className="truncate max-w-[120px] sm:max-w-none">
                     {selectedToxicity === ALL_TOXICITIES ? 'ระดับความเป็นพิษทั้งหมด' : TOXICITY_LABEL[selectedToxicity] || selectedToxicity}
                   </span>
                 </div>
-                <svg className={`w-4 h-4 text-slate-400 transition-transform ${isToxicityDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 text-gray-400 transition-transform ${isToxicityDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
               </button>
 
               {isToxicityDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 w-full lg:w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-10 overflow-hidden">
+                <div className="absolute top-full left-0 mt-1 w-full lg:w-48 bg-white border border-gray-200 rounded-lg z-10 overflow-hidden">
                   {toxicityFilters.map((filter) => (
                     <button
                       key={filter}
@@ -272,8 +272,8 @@ export default function ChemicalListPage() {
                       }}
                       className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-colors ${
                         selectedToxicity === filter
-                          ? 'bg-slate-800 text-white'
-                          : 'text-slate-700 hover:bg-slate-50'
+                          ? 'bg-gray-800 text-white'
+                          : 'text-gray-700 hover:bg-gray-50'
                       }`}
                     >
                       {filter === ALL_TOXICITIES ? 'ระดับความเป็นพิษทั้งหมด' : TOXICITY_LABEL[filter] || filter}
@@ -287,16 +287,16 @@ export default function ChemicalListPage() {
             <div className="relative sort-dropdown flex-1 lg:flex-none">
               <button
                 onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                className="w-full flex items-center justify-between gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                className="w-full flex items-center justify-between gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <ListFilter className="w-4 h-4 text-slate-500" />
+                  <ListFilter className="w-4 h-4 text-gray-500" />
                   <span>เรียง: {sortOrder}</span>
                 </div>
               </button>
 
               {isSortDropdownOpen && (
-                <div className="absolute top-full right-0 lg:left-0 mt-1 w-full lg:w-36 bg-white border border-slate-200 rounded-lg shadow-lg z-10 overflow-hidden">
+                <div className="absolute top-full right-0 lg:left-0 mt-1 w-full lg:w-36 bg-white border border-gray-200 rounded-lg z-10 overflow-hidden">
                   {['A-Z', 'Z-A'].map((order) => (
                     <button
                       key={order}
@@ -307,8 +307,8 @@ export default function ChemicalListPage() {
                       }}
                       className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-colors ${
                         sortOrder === order
-                          ? 'bg-slate-800 text-white'
-                          : 'text-slate-700 hover:bg-slate-50'
+                          ? 'bg-gray-800 text-white'
+                          : 'text-gray-700 hover:bg-gray-50'
                       }`}
                     >
                       ชื่อ {order}
@@ -322,11 +322,11 @@ export default function ChemicalListPage() {
         </div>
 
         {/* Data Table Card */}
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
 
           {/* Loading */}
           {loading && (
-            <div className="flex items-center justify-center gap-2 py-16 text-slate-400 text-sm">
+            <div className="flex items-center justify-center gap-2 py-16 text-gray-400 text-sm">
               <Loader2 className="w-5 h-5 animate-spin" />
               กำลังโหลดข้อมูล...
             </div>
@@ -339,7 +339,7 @@ export default function ChemicalListPage() {
               <p className="text-sm text-red-600 font-medium">{error}</p>
               <button
                 onClick={fetchChemicals}
-                className="px-4 py-1.5 text-xs font-semibold text-slate-700 border border-slate-200 rounded-md hover:bg-slate-50 transition-colors"
+                className="px-4 py-1.5 text-xs bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
               >
                 ลองใหม่อีกครั้ง
               </button>
@@ -349,8 +349,8 @@ export default function ChemicalListPage() {
           {/* Empty */}
           {!loading && !error && filteredChemicals.length === 0 && (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-              <FlaskConical className="w-8 h-8 text-slate-300" />
-              <p className="text-sm text-slate-500">
+              <FlaskConical className="w-8 h-8 text-gray-300" />
+              <p className="text-sm text-gray-500">
                 {chemicals.length === 0
                   ? 'ยังไม่มีข้อมูลสารเคมีในระบบ'
                   : 'ไม่พบสารเคมีที่ตรงกับคำค้นหาหรือตัวกรอง'}
@@ -364,24 +364,24 @@ export default function ChemicalListPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left min-w-[800px]">
                   {/* Table Head */}
-                  <thead className="bg-[#f8fafc] border-b border-slate-100">
+                  <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="py-4 px-6 text-xs font-bold text-slate-500 w-1/4">ชื่อสารเคมี</th>
-                      <th className="py-4 px-6 text-xs font-bold text-slate-500 w-1/4">ส่วนประกอบสำคัญ</th>
-                      <th className="py-4 px-6 text-xs font-bold text-slate-500 w-32">ความเป็นพิษ</th>
-                      <th className="py-4 px-6 text-xs font-bold text-slate-500">อัตราปริมาณ</th>
-                      <th className="py-4 px-6 text-xs font-bold text-slate-500 text-center"></th>
+                      <th className="py-4 px-6 text-[11px] font-bold text-gray-400 w-1/4">ชื่อสารเคมี</th>
+                      <th className="py-4 px-6 text-[11px] font-bold text-gray-400 w-1/4">ส่วนประกอบสำคัญ</th>
+                      <th className="py-4 px-6 text-[11px] font-bold text-gray-400 w-32">ความเป็นพิษ</th>
+                      <th className="py-4 px-6 text-[11px] font-bold text-gray-400">อัตราปริมาณ</th>
+                      <th className="py-4 px-6 text-[11px] font-bold text-gray-400 text-center"></th>
                     </tr>
                   </thead>
 
                   {/* Table Body */}
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-gray-100">
                     {pagedChemicals.map((chemical) => (
-                      <tr key={chemical.chemicalID} className="hover:bg-slate-50/50 transition-colors group">
+                      <tr key={chemical.chemicalID} className="hover:bg-gray-50/50 transition-colors group">
 
                         {/* ชื่อสารเคมี + รูปภาพ */}
                         <td className="py-4 px-6 flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-lg shadow-inner overflow-hidden relative bg-slate-100 shrink-0">
+                          <div className="w-10 h-10 rounded-lg overflow-hidden relative bg-gray-100 shrink-0">
                             {chemical.chemicalImg ? (
                               <Image
                                 src={chemical.chemicalImg}
@@ -391,31 +391,31 @@ export default function ChemicalListPage() {
                                 className="object-cover"
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-300">
+                              <div className="w-full h-full flex items-center justify-center text-gray-300">
                                 <FlaskConical className="w-4 h-4" />
                               </div>
                             )}
                           </div>
-                          <span className="font-bold text-slate-800 text-sm">
+                          <span className="font-bold text-gray-800 text-sm">
                             {chemical.chemicalName}
                           </span>
                         </td>
 
-                        <td className="py-4 px-6 text-slate-500 italic font-serif text-sm">
+                        <td className="py-4 px-6 text-gray-500 italic font-serif text-sm">
                           {chemical.activeIngredient}
                         </td>
 
                         <td className="py-4 px-6 text-sm">
                           <span
                             className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                              TOXICITY_STYLE[chemical.toxicityLevel] ?? 'bg-slate-100 text-slate-600'
+                              TOXICITY_STYLE[chemical.toxicityLevel] ?? 'bg-gray-100 text-gray-600'
                             }`}
                           >
                             {TOXICITY_LABEL[chemical.toxicityLevel] ?? chemical.toxicityLevel}
                           </span>
                         </td>
 
-                        <td className="py-4 px-6 text-slate-600 font-medium text-sm">
+                        <td className="py-4 px-6 text-gray-600 font-medium text-sm">
                           {chemical.dosageRate} {chemical.dosageUnit}
                         </td>
 
@@ -423,7 +423,7 @@ export default function ChemicalListPage() {
                         <td className="py-4 px-6 text-center">
                           <button
                             onClick={() => router.push(`/member/viewchemical?id=${chemical.chemicalID}`)}
-                            className="p-1.5 inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 font-semibold text-xs rounded-md transition-all border border-transparent hover:border-slate-200"
+                            className="p-1.5 inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-800 hover:bg-gray-100 font-semibold text-xs rounded-md transition-all border border-transparent hover:border-gray-200"
                             title="ดูรายละเอียดเพิ่มเติม"
                           >
                             <Eye className="w-4 h-4" />
@@ -437,8 +437,8 @@ export default function ChemicalListPage() {
               </div>
 
               {/* Pagination Footer */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 bg-[#f8fafc] px-6 py-4">
-                <span className="text-sm font-semibold text-slate-500">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 bg-gray-50 px-6 py-4">
+                <span className="text-sm font-semibold text-gray-500">
                   แสดงผลลัพธ์ {rangeStart} ถึง {rangeEnd} จากทั้งหมด {filteredChemicals.length} รายการ
                 </span>
 
@@ -446,14 +446,14 @@ export default function ChemicalListPage() {
                   <button
                     onClick={() => goToPage(currentPageSafe - 1)}
                     disabled={currentPageSafe === 1}
-                    className="w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-400 bg-white hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                    className="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
 
                   {pageNumbers.map((p, idx) =>
                     p === 'ellipsis' ? (
-                      <div key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-slate-400 text-sm font-bold tracking-widest">
+                      <div key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm font-bold tracking-widest">
                         ...
                       </div>
                     ) : (
@@ -462,8 +462,8 @@ export default function ChemicalListPage() {
                         onClick={() => goToPage(p as number)}
                         className={
                           p === currentPageSafe
-                            ? 'w-8 h-8 flex items-center justify-center rounded border border-slate-800 bg-slate-800 text-white font-bold text-sm'
-                            : 'w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-600 font-bold text-sm bg-white hover:bg-slate-50 transition-colors'
+                            ? 'w-8 h-8 flex items-center justify-center rounded border border-gray-800 bg-gray-800 text-white font-bold text-sm'
+                            : 'w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-600 font-bold text-sm bg-white hover:bg-gray-50 transition-colors'
                         }
                       >
                         {p}
@@ -474,7 +474,7 @@ export default function ChemicalListPage() {
                   <button
                     onClick={() => goToPage(currentPageSafe + 1)}
                     disabled={currentPageSafe === totalPages}
-                    className="w-8 h-8 flex items-center justify-center rounded border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                    className="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
