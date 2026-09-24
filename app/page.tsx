@@ -9,8 +9,10 @@ export default function Home() {
       <Link href="/admin/login">Admin</Link>
 
       <Link href="/member/login">Member</Link>
-      
+
       <Link href="/member/listinsects">List Insects</Link>
+
+      <Link href="/member/listchemicals">List Chemicals</Link>
     </div>
   );
 }

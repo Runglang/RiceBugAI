@@ -353,7 +353,7 @@ export default function MemberListInsects() {
 
                   {/* View Details Button */}
                   <button
-                    onClick={() => router.push(`/member/insect-detail-demo?id=${insect.insectID}`)}
+                    onClick={() => router.push(`/member/viewinsect?id=${insect.insectID}`)}
                     className="w-full mt-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#f8fafc] group-hover:bg-[#1e293b] group-hover:text-white text-slate-600 text-xs font-bold rounded-lg border border-slate-200 group-hover:border-transparent transition-all"
                   >
                     <Eye className="w-4 h-4" />

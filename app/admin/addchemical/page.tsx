@@ -389,9 +389,6 @@ export default function AddChemicalPage() {
                   <option value="">เลือกวิธีการใช้งาน...</option>
                   <option value="foliar_spray">พ่นทางใบ</option>
                   <option value="broadcast">หว่าน/โรยเม็ด</option>
-                  <option value="seed_treatment">คลุกเมล็ด</option>
-                  <option value="soil_drench">ราด/หยอดลงดิน</option>
-                  <option value="water_mix">ใช้กับน้ำในนา</option>
                 </select>
               </div>
 
