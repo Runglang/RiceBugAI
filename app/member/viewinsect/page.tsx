@@ -1,27 +1,27 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
-import { ZoomIn, Loader2, AlertCircle, X } from 'lucide-react';
+import {
+  ZoomIn,
+  Loader2,
+  AlertCircle,
+  X,
+  ChevronLeft,
+  ArrowRight,
+} from 'lucide-react';
 
-// ตั้งค่าใน .env.local: NEXT_PUBLIC_API_URL=http://localhost:8080
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const API_BASE_URL = `${API_ORIGIN}/api/v1/insects`;
 
-const DANGER_LABEL: Record<string, string> = {
-  low: 'ต่ำ',
-  medium: 'ปานกลาง',
-  high: 'สูง',
+const DANGER_BADGE: Record<string, { label: string; className: string }> = {
+  high: { label: 'ระดับอันตรายสูง', className: 'bg-[#FDECEA] text-[#B42318] border-[#F4B9B3]' },
+  medium: { label: 'ระดับอันตรายปานกลาง', className: 'bg-[#FFF4E0] text-[#8A5300] border-[#F0D29A]' },
+  low: { label: 'ระดับอันตรายต่ำ', className: 'bg-[#E8F5EC] text-[#1E7B45] border-[#B7DFC6]' },
 };
 
-const DANGER_STYLE: Record<string, string> = {
-  low: 'text-emerald-700',
-  medium: 'text-amber-700',
-  high: 'text-red-700',
-};
-
-// ตรงกับ com.ricebugai.aiinsectapi.v1.dtos.RiceGrowthStageDTO
 interface RiceGrowthStageDTO {
   stageID: string;
   stageName: string;
@@ -29,7 +29,6 @@ interface RiceGrowthStageDTO {
   durationRange: string;
 }
 
-// ตรงกับ com.ricebugai.aiinsectapi.v1.dtos.InsectDTO
 interface InsectDTO {
   insectID: string;
   insectName: string;
@@ -37,7 +36,7 @@ interface InsectDTO {
   insectType: string;
   dangerLevel: string;
   insectDes: string;
-  insectImg?: string | null;
+  insectImg?: string[] | null;
   riceGrowthStages: RiceGrowthStageDTO[];
 }
 
@@ -52,10 +51,9 @@ function ViewInsectContent() {
   const [loadErrorMsg, setLoadErrorMsg] = useState('');
   const [insect, setInsect] = useState<InsectDTO | null>(null);
 
-  // State ควบคุม Modal ขยายรูปภาพ
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  // โหลดข้อมูลแมลงจาก API
   useEffect(() => {
     if (!insectId) return;
 
@@ -92,41 +90,38 @@ function ViewInsectContent() {
     };
   }, [insectId]);
 
-  // Loading
   if (pageState === 'loading') {
     return (
-      <div className="min-h-screen bg-[#F3F5F1] flex items-center justify-center gap-2 text-gray-400 text-sm">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        กำลังโหลดข้อมูลแมลง...
+      <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D] font-sans">
+        <Loader2 className="w-6 h-6 animate-spin text-[#2D7048]" />
+        <span>กำลังโหลดข้อมูลแมลงศัตรูพืช...</span>
       </div>
     );
   }
 
-  // Not Found
   if (pageState === 'notFound') {
     return (
-      <div className="min-h-screen bg-[#F3F5F1] flex flex-col items-center justify-center gap-3 text-center px-6">
-        <AlertCircle className="w-8 h-8 text-red-400" />
-        <p className="text-sm text-gray-600">ไม่พบข้อมูลแมลงนี้ อาจถูกลบไปแล้ว</p>
+      <div className="max-w-xl mx-auto my-16 p-8 bg-[#FDECEA] border border-[#F4B9B3] rounded-lg text-center space-y-3 font-sans">
+        <AlertCircle className="w-8 h-8 text-[#B42318] mx-auto" />
+        <p className="text-sm font-semibold text-[#B42318]">ไม่พบข้อมูลแมลงนี้ในระบบ (อาจถูกลบไปแล้ว)</p>
         <button
           onClick={() => router.push('/member/listinsects')}
-          className="px-4 py-2 text-xs bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+          className="px-4 py-2 text-sm bg-white border border-[#CDD2CF] text-[#1A1F1C] font-medium rounded-md hover:bg-[#F1F3F2] transition-colors cursor-pointer"
         >
-          กลับไปหน้ารายการ
+          กลับไปหน้ารายการแมลง
         </button>
       </div>
     );
   }
 
-  // Error
   if (pageState === 'loadError') {
     return (
-      <div className="min-h-screen bg-[#F3F5F1] flex flex-col items-center justify-center gap-3 text-center px-6">
-        <AlertCircle className="w-8 h-8 text-red-400" />
-        <p className="text-sm text-red-600">{loadErrorMsg}</p>
+      <div className="max-w-xl mx-auto my-16 p-8 bg-[#FDECEA] border border-[#F4B9B3] rounded-lg text-center space-y-3 font-sans">
+        <AlertCircle className="w-8 h-8 text-[#B42318] mx-auto" />
+        <p className="text-sm text-[#B42318]">{loadErrorMsg}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-4 py-2 text-xs bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+          className="px-4 py-2 text-sm bg-white border border-[#CDD2CF] text-[#1A1F1C] font-medium rounded-md hover:bg-[#F1F3F2] transition-colors cursor-pointer"
         >
           ลองใหม่อีกครั้ง
         </button>
@@ -134,132 +129,206 @@ function ViewInsectContent() {
     );
   }
 
-  // ถ้า pageState === 'ready' แต่ insect เป็น null (กรณีไม่น่าเกิด)
   if (!insect) return null;
 
-  const stagesText = insect.riceGrowthStages?.length
-    ? insect.riceGrowthStages.map((s) => s.stageName).join(', ')
-    : 'ไม่ระบุ';
+  const images: string[] = insect.insectImg ?? [];
+  const danger = DANGER_BADGE[insect.dangerLevel?.toLowerCase()] || {
+    label: insect.dangerLevel || 'ทั่วไป',
+    className: 'bg-[#F1F3F2] text-[#3F4742] border-[#E3E6E4]',
+  };
 
   return (
-    <div className="min-h-screen bg-[#F3F5F1] p-4 sm:p-8 md:p-12 font-sans text-gray-800">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
+      <div className="max-w-5xl mx-auto px-6 pt-8">
 
-        {/* Main Content Layout */}
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+        {/* Breadcrumbs */}
+        <div className="flex items-center justify-between pb-6 mb-6 border-b border-[#E3E6E4]">
+          <div className="flex items-center gap-2 text-sm text-[#5A635D]">
+            <Link href="/member/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
+            <span>/</span>
+            <Link href="/member/listinsects" className="hover:text-[#1A1F1C] transition-colors">ข้อมูลแมลง</Link>
+            <span>/</span>
+            <span className="text-[#1A1F1C] font-semibold">{insect.insectName}</span>
+          </div>
 
-          {/* Left Column: Image Viewer */}
-          <div className="w-full lg:w-3/5 relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 aspect-[4/3] lg:aspect-auto group cursor-pointer" onClick={() => insect.insectImg && setIsImageModalOpen(true)}>
-            {insect.insectImg ? (
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-1 text-sm text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
+          >
+            <ChevronLeft size={16} />
+            <span>ย้อนกลับ</span>
+          </button>
+        </div>
+
+        <div className="space-y-8">
+
+          {/* Specimen Header Card */}
+          <div className="bg-white border border-[#E3E6E4] rounded-lg p-6 grid grid-cols-1 md:grid-cols-12 gap-8">
+
+            {/* Left: Gallery */}
+            <div className="md:col-span-5 space-y-3">
+              <div
+                onClick={() => images.length > 0 && setIsImageModalOpen(true)}
+                className={`w-full h-64 bg-[#F1F3F2] rounded-md border border-[#E3E6E4] relative overflow-hidden flex items-center justify-center ${
+                  images.length > 0 ? 'cursor-zoom-in group' : ''
+                }`}
+              >
+                {images.length > 0 ? (
+                  <>
+                    <Image
+                      src={images[selectedImageIndex]}
+                      alt={insect.insectName}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs gap-1.5 font-medium">
+                      <ZoomIn size={16} />
+                      <span>คลิกเพื่อขยายภาพ</span>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-sm text-[#9AA29D]">ไม่มีรูปภาพ</span>
+                )}
+              </div>
+
+              {images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedImageIndex(idx)}
+                      className={`w-14 h-14 rounded-md border overflow-hidden relative shrink-0 transition-all ${
+                        selectedImageIndex === idx
+                          ? 'border-[#2D7048] ring-2 ring-[#B9DBC6]'
+                          : 'border-[#E3E6E4] opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <Image src={img} alt="" fill className="object-cover" unoptimized />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Taxonomic Summary */}
+            <div className="md:col-span-7 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-[#5A635D] font-medium">
+                    {insect.insectType || 'ศัตรูพืชในนาข้าว'}
+                  </span>
+                  <span className={`px-2.5 py-0.5 rounded-sm border text-xs font-medium ${danger.className}`}>
+                    {danger.label}
+                  </span>
+                </div>
+
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#1A1F1C] tracking-tight">
+                  {insect.insectName}
+                </h1>
+                <p className="text-sm italic text-[#5A635D] mt-1">
+                  {insect.scientificName || '—'}
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 my-5 p-3.5 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md">
+                  <div>
+                    <div className="text-xs text-[#5A635D]">ประเภทแมลง</div>
+                    <div className="text-sm font-semibold text-[#1A1F1C] mt-0.5">{insect.insectType || '—'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-[#5A635D]">การจัดหมวดหมู่</div>
+                    <div className="text-sm font-semibold text-[#1A1F1C] mt-0.5">ศัตรูพืชในนาข้าว</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-sm font-semibold text-[#1A1F1C] mb-1.5">ลักษณะและพฤติกรรมการทำลาย:</div>
+                  <p className="text-sm text-[#3F4742] leading-relaxed whitespace-pre-line">
+                    {insect.insectDes || 'ไม่มีข้อมูลคำอธิบายเพิ่มเติม'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 mt-6 border-t border-[#E3E6E4] flex items-center justify-between text-xs text-[#5A635D]">
+                <span>ข้อมูลชีววิทยาอ้างอิงตามมาตรฐานวิชาการ</span>
+                <Link
+                  href="/member/listchemicals"
+                  className="text-[#2D7048] hover:text-[#25593A] font-medium inline-flex items-center gap-1"
+                >
+                  <span>ดูสารเคมีที่แนะนำสำหรับกำจัด</span>
+                  <ArrowRight size={13} />
+                </Link>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Rice Growth Stages Affected Section */}
+          <div className="bg-white border border-[#E3E6E4] rounded-lg p-6">
+            <h2 className="text-base font-bold text-[#1A1F1C] mb-4">
+              ระยะการเจริญเติบโตของข้าวที่ถูกเข้าทำลาย
+            </h2>
+
+            {!insect.riceGrowthStages || insect.riceGrowthStages.length === 0 ? (
+              <div className="text-sm text-[#5A635D]">
+                ไม่มีการระบุระยะการเจริญเติบโตที่เฉพาะเจาะจง (สามารถเข้าทำลายได้ทุกระยะ)
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {insect.riceGrowthStages.map((st) => (
+                  <div
+                    key={st.stageID || st.stageName}
+                    className="p-3.5 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md"
+                  >
+                    <div className="flex items-center justify-between text-sm font-bold text-[#1A1F1C] mb-1">
+                      <span>{st.stageName}</span>
+                      {st.durationRange && (
+                        <span className="text-xs bg-white px-2 py-0.5 rounded text-[#5A635D] font-medium border border-[#E3E6E4]">
+                          {st.durationRange}
+                        </span>
+                      )}
+                    </div>
+                    {st.stageDes && (
+                      <p className="text-xs text-[#5A635D] leading-relaxed mt-1">
+                        {st.stageDes}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* Image Modal */}
+        {isImageModalOpen && images.length > 0 && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A1F1C]/75 p-4"
+            onClick={() => setIsImageModalOpen(false)}
+          >
+            <div className="relative w-full max-w-4xl aspect-square md:aspect-video rounded-lg overflow-hidden">
+              <button
+                className="absolute top-4 right-4 z-10 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsImageModalOpen(false);
+                }}
+              >
+                <X className="w-5 h-5" />
+              </button>
               <Image
-                src={insect.insectImg}
+                src={images[selectedImageIndex]}
                 alt={insect.insectName}
                 fill
                 unoptimized
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                className="object-contain"
+                onClick={(e) => e.stopPropagation()}
               />
-            ) : (
-              <div className="w-full h-full min-h-[300px] flex items-center justify-center text-gray-400 text-sm">
-                ไม่มีรูปภาพ
-              </div>
-            )}
-
-            {/* Floating Action Buttons (Zoom & Expand) */}
-            {insect.insectImg && (
-              <div className="absolute bottom-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsImageModalOpen(true);
-                  }}
-                  className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-white transition-all"
-                >
-                  <ZoomIn className="w-5 h-5" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Right Column: Info Card */}
-          <div className="w-full lg:w-2/5">
-            <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 rounded-xl h-full flex flex-col">
-
-              {/* Header Title */}
-              <div className="mb-6">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-1 tracking-tight">
-                  {insect.insectName}
-                </h1>
-                <p className="text-sm text-gray-400 font-medium">{insect.scientificName}</p>
-              </div>
-
-              <hr className="border-gray-200 mb-6" />
-
-              {/* Data Grid */}
-              <div className="grid grid-cols-2 gap-y-6 gap-x-4 mb-6">
-                <div>
-                  <span className="block text-[11px] font-bold text-gray-400 mb-1">ประเภทแมลง</span>
-                  <span className="block text-sm font-bold text-gray-800">{insect.insectType}</span>
-                </div>
-                <div>
-                  <span className="block text-[11px] font-bold text-gray-400 mb-1">ระดับความอันตราย</span>
-                  <span className={`block text-sm font-bold ${DANGER_STYLE[insect.dangerLevel] ?? 'text-gray-800'}`}>
-                    {DANGER_LABEL[insect.dangerLevel] ?? insect.dangerLevel}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-[11px] font-bold text-gray-400 mb-1">ระยะการเจริญเติบโตของข้าว</span>
-                  <span className="block text-sm font-bold text-gray-800">{stagesText}</span>
-                </div>
-                <div>
-                  <span className="block text-[11px] font-bold text-gray-400 mb-1">ชื่อวิทยาศาสตร์</span>
-                  <span className="block text-sm font-bold text-gray-800">{insect.scientificName}</span>
-                </div>
-              </div>
-
-              <hr className="border-gray-200 mb-6" />
-
-              {/* Description */}
-              <div className="flex-grow overflow-hidden">
-                <h2 className="text-sm font-bold text-gray-900 mb-3">รายละเอียด</h2>
-                <p className="text-xs text-gray-500 leading-relaxed whitespace-pre-wrap break-words break-all">
-                  {insect.insectDes || 'ไม่มีรายละเอียด'}
-                </p>
-              </div>
-
             </div>
           </div>
-
-        </div>
+        )}
       </div>
-
-      {/* Image Modal */}
-      {isImageModalOpen && insect.insectImg && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          onClick={() => setIsImageModalOpen(false)}
-        >
-          <div className="relative w-full max-w-5xl aspect-square md:aspect-video rounded-xl overflow-hidden">
-            <button
-              className="absolute top-4 right-4 z-10 w-10 h-10 bg-black/50 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsImageModalOpen(false);
-              }}
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <Image
-              src={insect.insectImg}
-              alt={insect.insectName}
-              fill
-              unoptimized
-              className="object-contain"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -268,9 +337,9 @@ export default function ViewInsectPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F3F5F1] flex items-center justify-center gap-2 text-gray-400 text-sm">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          กำลังโหลด...
+        <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D] font-sans">
+          <Loader2 className="w-6 h-6 animate-spin text-[#2D7048]" />
+          <span>กำลังโหลด...</span>
         </div>
       }
     >

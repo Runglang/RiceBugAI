@@ -1,15 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Plus, Trash2, AlertCircle, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Plus, Trash2, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import Cookies from 'js-cookie';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
 export interface GrowthStage {
   stageID: string;
@@ -26,88 +23,44 @@ export interface RiceField {
   currentGrowthStage?: GrowthStage;
 }
 
-interface MyFieldsPageProps {
-  onAnalyzeField?: (field: RiceField) => void;
-}
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
-export default function MyFieldsPage({ onAnalyzeField }: MyFieldsPageProps) {
+export default function MyFieldsPage() {
   const router = useRouter();
 
   const [fields, setFields] = useState<RiceField[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [memberID, setMemberID] = useState<string | null>(null);
-
-  // State สำหรับปุ่มลบ
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
-  const reloadFields = async () => {
-    if (!memberID) return;
+  const fetchFields = useCallback(async (mId: string) => {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await fetch(`${API_URL}/api/v1/members/${memberID}/fields`);
-      if (!res.ok) throw new Error("โหลดข้อมูลแปลงนาไม่สำเร็จ");
+      const res = await fetch(`${API_URL}/api/v1/members/${mId}/fields`);
+      if (!res.ok) throw new Error('โหลดข้อมูลแปลงนาไม่สำเร็จ');
       const data: RiceField[] = await res.json();
-      setFields(data);
+      setFields(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ",
-      );
+      setError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    const session = Cookies.get("member_session");
+    const session = Cookies.get('member_session');
     if (!session) {
-      router.push("/member/login");
-    } else {
-      Promise.resolve().then(() => {
-        const member = JSON.parse(session);
-        setMemberID(member.memberID);
-      });
+      router.push('/member/login');
+      return;
     }
-  }, [router]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadFields = async (mId: string) => {
-      try {
-        const res = await fetch(`${API_URL}/api/v1/members/${mId}/fields`);
-        if (!res.ok) throw new Error("โหลดข้อมูลแปลงนาไม่สำเร็จ");
-        const data: RiceField[] = await res.json();
-
-        if (!cancelled) {
-          setFields(data);
-          setIsLoading(false);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ",
-          );
-          setIsLoading(false);
-        }
-      }
-    };
-
-    if (memberID) {
-      loadFields(memberID);
+    try {
+      const member = JSON.parse(session);
+      setMemberID(member.memberID);
+      fetchFields(member.memberID);
+    } catch {
+      router.push('/member/login');
     }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [memberID]);
+  }, [router, fetchFields]);
 
   const handleDelete = async (fieldID: string, fieldName: string) => {
     if (!memberID) return;
@@ -120,174 +73,144 @@ export default function MyFieldsPage({ onAnalyzeField }: MyFieldsPageProps) {
     try {
       const res = await fetch(
         `${API_URL}/api/v1/members/${memberID}/fields/${fieldID}`,
-        {
-          method: "DELETE",
-        },
+        { method: 'DELETE' }
       );
 
       if (!res.ok) {
-        throw new Error("ลบข้อมูลแปลงนาไม่สำเร็จ");
+        throw new Error('ลบข้อมูลแปลงนาไม่สำเร็จ');
       }
 
-      // รีโหลดข้อมูลหลังจากลบสำเร็จ
-      setFields(fields.filter((f) => f.fieldID !== fieldID));
+      setFields((prev) => prev.filter((f) => f.fieldID !== fieldID));
     } catch (err) {
-      alert(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการลบ");
+      alert(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการลบ');
     } finally {
       setIsDeletingId(null);
     }
   };
 
-  const formatArea = (areaSize: number, areaUnit: string) =>
-    `${areaSize} ${areaUnit}`;
-
   return (
-    <div className="min-h-screen bg-[#F3F5F1] p-6 pt-10">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-8">
+    <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
+      <div className="max-w-4xl mx-auto px-6 pt-8">
+
+        {/* Header Strip */}
+        <div className="pb-6 mb-8 border-b border-[#E3E6E4] flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">แปลงนาของฉัน</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              ภาพรวมและการจัดการข้อมูลแปลงปลูก
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
+              แปลงนาข้าวของฉัน
+            </h1>
+            <p className="text-sm text-[#5A635D] mt-1">
+              ทะเบียนแปลงเพาะปลูก ติดตามอายุข้าว และระยะการเจริญเติบโตปัจจุบัน
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => router.push("/member/addfield")}
-            className="h-12 px-5 rounded-lg bg-green-500 text-white flex items-center gap-2 text-sm font-semibold shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:bg-green-600 transition-colors whitespace-nowrap"
+
+          <Link
+            href="/member/addfield"
+            className="inline-flex items-center gap-2 px-4 h-10 rounded-md bg-[#2D7048] hover:bg-[#25593A] text-white text-sm font-medium transition-colors shrink-0"
           >
-            <Plus size={20} strokeWidth={2.5} />
-            เพิ่มแปลงนาใหม่
-          </button>
+            <Plus size={16} />
+            <span>เพิ่มแปลงนาใหม่</span>
+          </Link>
         </div>
 
         {/* States */}
-        {isLoading && (
-          <div className="space-y-4">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-32 rounded-xl border border-gray-200 bg-white animate-pulse"
-              />
-            ))}
+        {isLoading ? (
+          <div className="py-20 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D]">
+            <Loader2 className="animate-spin text-[#2D7048]" size={24} />
+            <span>กำลังโหลดข้อมูลแปลงนา...</span>
           </div>
-        )}
-
-        {!isLoading && error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-6 py-8 flex flex-col items-center gap-3 text-center text-sm text-red-700">
-            <AlertCircle className="w-8 h-8 opacity-80" />
-            <p>{error}</p>
+        ) : error ? (
+          <div className="py-12 text-center bg-[#FDECEA] border border-[#F4B9B3] rounded-lg p-6 text-sm text-[#B42318] flex flex-col items-center gap-2">
+            <AlertCircle size={24} />
+            <span>{error}</span>
             <button
-              onClick={() => reloadFields()}
-              className="mt-2 px-4 py-2 bg-white rounded-lg border border-red-200 hover:bg-red-100 transition-colors"
+              onClick={() => memberID && fetchFields(memberID)}
+              className="mt-2 px-3 py-1.5 bg-white border border-[#CDD2CF] text-[#1A1F1C] rounded-md text-sm font-medium hover:bg-[#F1F3F2] transition-colors cursor-pointer"
             >
               ลองใหม่อีกครั้ง
             </button>
           </div>
-        )}
-
-        {!isLoading && !error && fields.length === 0 && (
-          <div className="rounded-xl border border-gray-200 bg-white px-6 py-12 text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-              <Plus className="w-8 h-8 text-gray-300" />
-            </div>
-            <p className="text-sm font-semibold text-gray-600">
-              ยังไม่มีแปลงนา
+        ) : fields.length === 0 ? (
+          <div className="py-16 text-center bg-white border border-[#E3E6E4] rounded-lg p-8 flex flex-col items-center">
+            <h3 className="text-base font-bold text-[#1A1F1C]">ยังไม่มีข้อมูลแปลงนาในระบบ</h3>
+            <p className="text-sm text-[#5A635D] mt-1 max-w-sm">
+              เพิ่มข้อมูลแปลงนาเพื่อเริ่มคำนวณอายุข้าวและใช้เครื่องมือคำนวณสารเคมีกำจัดศัตรูพืช
             </p>
-            <p className="text-xs text-gray-400 mt-1 mb-6">
-              เริ่มเพิ่มแปลงแรกของคุณเพื่อเข้าสู่ระบบประเมิน
-            </p>
-            <button
-              onClick={() => router.push("/member/addfield")}
-              className="px-5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+            <Link
+              href="/member/addfield"
+              className="mt-5 inline-flex items-center gap-2 px-4 h-10 rounded-md bg-[#2D7048] hover:bg-[#25593A] text-white text-sm font-medium transition-colors"
             >
-              เพิ่มแปลงนาเลย
-            </button>
+              <Plus size={15} />
+              <span>ลงทะเบียนแปลงนาแรก</span>
+            </Link>
           </div>
-        )}
-
-        {/* Field list */}
-        {!isLoading && !error && fields.length > 0 && (
-          <div className="space-y-4 mb-10">
-            {fields.map((field, index) => (
+        ) : (
+          <div className="space-y-4">
+            {fields.map((field) => (
               <div
                 key={field.fieldID}
-                className="rounded-xl border border-gray-200 bg-white px-7 py-5 transition-shadow group relative"
+                className="bg-white border border-[#E3E6E4] rounded-lg p-5 transition-all group flex flex-col md:flex-row md:items-center justify-between gap-5"
               >
-                {/* ปุ่มลบ (อยู่มุมขวาบน) */}
-                <button
-                  onClick={() => handleDelete(field.fieldID, field.fieldName)}
-                  disabled={isDeletingId === field.fieldID}
-                  className="absolute top-4 right-4 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                  title="ลบแปลงนานี้"
-                >
-                  {isDeletingId === field.fieldID ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-5 h-5" />
-                  )}
-                </button>
-
-                <div className="flex items-center gap-3 mb-5 pr-10">
-                  <div className="w-8 h-8 rounded-full bg-green-50 text-green-700 flex items-center justify-center font-bold text-sm shrink-0">
-                    {index + 1}
+                <div className="space-y-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h3 className="text-base font-bold text-[#1A1F1C] truncate">
+                      {field.fieldName}
+                    </h3>
+                    <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-sm bg-[#E8F5EC] text-[#1E7B45] border border-[#B7DFC6] font-medium">
+                      {field.currentGrowthStage?.stageName || 'ไม่ระบุระยะ'}
+                    </span>
                   </div>
-                  <h2 className="text-lg font-bold text-gray-900 truncate">
-                    {field.fieldName}
-                  </h2>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 whitespace-nowrap">
-                    ระยะ{field.currentGrowthStage?.stageName || "ไม่ระบุระยะ"}
-                  </span>
+
+                  {/* Metrics Row */}
+                  <div className="grid grid-cols-3 gap-3 p-3 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md">
+                    <div>
+                      <div className="text-xs text-[#5A635D]">วันที่เริ่มปลูก</div>
+                      <div className="text-sm font-semibold text-[#1A1F1C] mt-0.5">
+                        {field.plantingDate || '—'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-[#5A635D]">ขนาดพื้นที่</div>
+                      <div className="text-sm font-semibold text-[#1A1F1C] mt-0.5">
+                        {field.areaSize} {field.areaUnit || 'ไร่'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-[#5A635D]">อายุข้าว</div>
+                      <div className="text-sm font-bold text-[#2D7048] mt-0.5">
+                        {field.riceAge} วัน
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex flex-wrap gap-x-12 gap-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-gray-400 mb-1 tracking-wide uppercase">
-                        วันที่ปลูก
-                      </p>
-                      <p className="text-sm font-bold text-gray-800">
-                        {new Date(field.plantingDate).toLocaleDateString(
-                          "th-TH",
-                          {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          },
-                        )}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-gray-400 mb-1 tracking-wide uppercase">
-                        ขนาดพื้นที่
-                      </p>
-                      <p className="text-sm font-bold text-gray-800">
-                        {formatArea(field.areaSize, field.areaUnit)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-gray-400 mb-1 tracking-wide uppercase">
-                        อายุข้าว
-                      </p>
-                      <p className="text-sm font-bold text-gray-800 text-green-700">
-                        {field.riceAge} วัน
-                      </p>
-                    </div>
-                  </div>
+                {/* Actions */}
+                <div className="flex items-center gap-2 md:self-center shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-[#E3E6E4]">
+                  <Link
+                    href="/member/calculation"
+                    className="px-3.5 h-9 rounded-md bg-[#2D7048] hover:bg-[#25593A] text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
+                  >
+                    <span>คำนวณยา</span>
+                    <ArrowRight size={13} />
+                  </Link>
 
                   <button
-                    type="button"
-                    onClick={() => onAnalyzeField?.(field)}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all whitespace-nowrap"
+                    onClick={() => handleDelete(field.fieldID, field.fieldName)}
+                    disabled={isDeletingId === field.fieldID}
+                    className="h-9 px-3 rounded-md bg-white hover:bg-[#FDECEA] border border-[#CDD2CF] hover:border-[#F4B9B3] text-[#5A635D] hover:text-[#B42318] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center"
+                    title="ลบแปลงนา"
                   >
-                    เริ่มประเมิน
+                    {isDeletingId === field.fieldID ? (
+                      <Loader2 size={15} className="animate-spin text-[#B42318]" />
+                    ) : (
+                      <Trash2 size={15} />
+                    )}
                   </button>
                 </div>
               </div>
             ))}
           </div>
         )}
+
       </div>
     </div>
   );

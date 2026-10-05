@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, User, Key, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 
@@ -33,10 +33,8 @@ export default function LoginPage() {
         throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
       }
 
-      const member = await res.json(); // { memberID, username, email, address }
-
+      const member = await res.json();
       Cookies.set('member_session', JSON.stringify(member), { expires: 1 });
-
       router.push('/member/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'เข้าสู่ระบบไม่สำเร็จ');
@@ -46,226 +44,106 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F3F5F1] flex items-center justify-center px-4">
-      <div className="w-full max-w-[540px]">
+    <div className="min-h-[85vh] flex items-center justify-center bg-[#F7F8F7] px-4 py-12 font-sans">
+      <div className="bg-white p-8 rounded-lg w-full max-w-[400px] border border-[#E3E6E4]">
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 px-10 py-12">
-
-          {/* Header Icon */}
-          <div className="flex justify-center mb-7">
-            <div className="w-[78px] h-[78px] rounded-full bg-green-50 flex items-center justify-center">
-              <Lock
-                className="w-9 h-9 text-green-600"
-                strokeWidth={2.5}
-              />
-            </div>
-          </div>
-
-          {/* Title */}
-          <div className="text-center mb-10">
-            <h1 className="text-[28px] font-bold text-gray-900">
-              เข้าสู่ระบบสมาชิก
-            </h1>
-
-            <p className="mt-2 text-[16px] text-gray-400">
-              เข้าถึงแดชบอร์ดตรวจจับศัตรูพืชด้วยระบบ AI ของคุณ
-            </p>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit}>
-
-            {/* Error Message */}
-            {error && (
-              <div className="mb-6 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-600">
-                {error}
-              </div>
-            )}
-
-            {/* Username */}
-            <div className="mb-6">
-              <label
-                htmlFor="username"
-                className="block text-[17px] font-semibold text-gray-800 mb-2"
-              >
-                Username
-              </label>
-
-              <div className="relative">
-                <User
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                  strokeWidth={2}
-                />
-
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
-                  required
-                  disabled={isLoading}
-                  className="
-                    w-full
-                    py-3
-                    rounded-lg
-                    border border-gray-300
-                    bg-white
-                    pl-12 pr-4
-                    text-gray-900
-                    placeholder:text-gray-400
-                    outline-none
-                    transition
-                    focus:border-transparent
-                    focus:ring-2
-                    focus:ring-green-500
-                  "
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div className="mb-6">
-              <label
-                htmlFor="password"
-                className="block text-[17px] font-semibold text-gray-800 mb-2"
-              >
-                Password
-              </label>
-
-              <div className="relative">
-                <Key
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                  strokeWidth={2}
-                />
-
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                  disabled={isLoading}
-                  className="
-                    w-full
-                    py-3
-                    rounded-lg
-                    border border-gray-300
-                    bg-white
-                    pl-12 pr-12
-                    text-gray-900
-                    placeholder:text-gray-400
-                    outline-none
-                    transition
-                    focus:border-transparent
-                    focus:ring-2
-                    focus:ring-green-500
-                  "
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="
-                    absolute
-                    right-4
-                    top-1/2
-                    -translate-y-1/2
-                    text-gray-400
-                    hover:text-gray-600
-                    transition
-                  "
-                  aria-label={
-                    showPassword
-                      ? 'Hide password'
-                      : 'Show password'
-                  }
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Remember Me */}
-            <div className="flex items-center mb-8">
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="
-                    w-5 h-5
-                    rounded-md
-                    border-gray-300
-                    text-green-500
-                    focus:ring-green-500
-                  "
-                />
-
-                <span className="text-[16px] text-gray-500">
-                  จดจำฉันไว้ในอุปกรณ์นี้
-                </span>
-              </label>
-            </div>
-
-            {/* Login Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="
-                w-full
-                py-3
-                rounded-lg
-                bg-green-500
-                hover:bg-green-600
-                text-white
-                font-semibold
-                shadow-[0_0_20px_rgba(34,197,94,0.4)]
-                text-[17px]
-                transition
-                disabled:opacity-60
-                disabled:cursor-not-allowed
-                flex items-center justify-center gap-2
-              "
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  กำลังเข้าสู่ระบบ...
-                </>
-              ) : (
-                'เข้าสู่ระบบ'
-              )}
-            </button>
-
-          </form>
-          {/* Register Link */}
-          <div className="text-center pt-2">
-            <span className="text-sm text-gray-500">
-              ยังไม่มีบัญชีใช่ไหม?{' '}
-            </span>
-
-            <Link
-              href="/member/register"
-              className="
-                  text-sm
-                  font-semibold
-                  text-green-600
-                  hover:text-green-700
-                  transition
-                "
-            >
-              สมัครสมาชิก
-            </Link>
-          </div>
+        {/* Wordmark & Header */}
+        <div className="text-center mb-6">
+          <Link href="/" className="inline-block text-xl font-bold tracking-tight text-[#1A1F1C] mb-2">
+            RiceBugAI
+          </Link>
+          <h1 className="text-xl font-bold text-[#1A1F1C]">
+            เข้าสู่ระบบสมาชิก
+          </h1>
+          <p className="text-xs text-[#5A635D] mt-1">
+            เข้าถึงระบบจัดการแปลงนาและเครื่องมือคำนวณสารเคมี
+          </p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-md bg-[#FDECEA] border border-[#F4B9B3] text-xs text-[#B42318] font-medium" role="alert">
+            {error}
+          </div>
+        )}
+
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-[#1A1F1C] mb-1.5"
+            >
+              ชื่อผู้ใช้
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              disabled={isLoading}
+              className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
+              placeholder="กรอกชื่อผู้ใช้"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-[#1A1F1C] mb-1.5"
+            >
+              รหัสผ่าน
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+                className="w-full h-10 pl-3 pr-10 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
+                placeholder="กรอกรหัสผ่าน"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9AA29D] hover:text-[#1A1F1C] cursor-pointer"
+                aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-10 mt-2 rounded-md bg-[#2D7048] hover:bg-[#25593A] active:bg-[#1E4730] text-white text-sm font-medium transition-colors disabled:bg-[#F1F3F2] disabled:text-[#9AA29D] disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span>กำลังตรวจสอบข้อมูล...</span>
+              </>
+            ) : (
+              <span>เข้าสู่ระบบ</span>
+            )}
+          </button>
+        </form>
+
+        <div className="text-center pt-5 mt-5 border-t border-[#E3E6E4] text-xs text-[#5A635D]">
+          <span>ยังไม่มีบัญชีสมาชิก? </span>
+          <Link
+            href="/member/register"
+            className="font-medium text-[#2D7048] hover:underline"
+          >
+            สมัครสมาชิกใหม่
+          </Link>
+        </div>
+
       </div>
-    </main>
+    </div>
   );
 }

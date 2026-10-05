@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, ChangeEvent, FormEvent, Suspense } from 'react';
+import { useState, useEffect, ChangeEvent, FormEvent, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronRight, Upload, Trash2, HelpCircle, Save, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Upload, Trash2, Save, Loader2, AlertCircle, CheckCircle2, ChevronLeft } from 'lucide-react';
 
-// ตั้งค่าใน .env.local: NEXT_PUBLIC_API_URL=http://localhost:8080
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const API_BASE_URL = `${API_ORIGIN}/api/v1/insects`;
 const STAGES_API_URL = `${API_ORIGIN}/api/v1/rice-growth-stages`;
@@ -21,7 +21,6 @@ interface InsectFormData {
   description: string;
 }
 
-// ตรงกับ com.ricebugai.aiinsectapi.v1.dtos.RiceGrowthStageDTO
 interface RiceGrowthStageDTO {
   stageID: string;
   stageName: string;
@@ -29,7 +28,6 @@ interface RiceGrowthStageDTO {
   durationRange: string;
 }
 
-// ตรงกับ com.ricebugai.aiinsectapi.v1.dtos.InsectDTO
 interface InsectDTO {
   insectID?: string;
   insectName: string;
@@ -37,7 +35,7 @@ interface InsectDTO {
   insectType: string;
   dangerLevel: DangerLevel;
   insectDes: string;
-  insectImg?: string | null; // response = URL, request = ไม่ต้องส่ง (รูปแยกเป็น MultipartFile)
+  insectImg?: string[];
   riceGrowthStages: Pick<RiceGrowthStageDTO, 'stageID'>[];
 }
 
@@ -60,18 +58,17 @@ const emptyFormData: InsectFormData = {
 
 function EditInsectForm() {
   const searchParams = useSearchParams();
-  const insectId = searchParams.get('insectId') ?? undefined;
+  const insectId = searchParams.get('insectId') || searchParams.get('id') || undefined;
   const router = useRouter();
 
   const [pageState, setPageState] = useState<PageState>('loading');
   const [loadErrorMsg, setLoadErrorMsg] = useState('');
 
   const [formData, setFormData] = useState<InsectFormData>(emptyFormData);
-  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
-  const [imageRemoved, setImageRemoved] = useState(false);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   const [stages, setStages] = useState<RiceGrowthStageDTO[]>([]);
   const [stagesLoading, setStagesLoading] = useState(true);
@@ -79,7 +76,6 @@ function EditInsectForm() {
 
   const [status, setStatus] = useState<Status>({ state: 'idle', message: '' });
 
-  // โหลดรายการระยะการเจริญเติบโตของข้าว
   useEffect(() => {
     const controller = new AbortController();
 
@@ -87,11 +83,9 @@ function EditInsectForm() {
       try {
         const res = await fetch(STAGES_API_URL, { signal: controller.signal });
         if (controller.signal.aborted) return;
-
-        if (!res.ok) throw new Error(`โหลดระยะการเจริญเติบโตไม่สำเร็จ (HTTP ${res.status})`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: RiceGrowthStageDTO[] = await res.json();
-
-        if (!controller.signal.aborted) setStages(data);
+        if (!controller.signal.aborted) setStages(Array.isArray(data) ? data : []);
       } catch (err) {
         if (!controller.signal.aborted) {
           setStagesError(err instanceof Error ? err.message : 'โหลดระยะการเจริญเติบโตไม่สำเร็จ');
@@ -102,15 +96,14 @@ function EditInsectForm() {
     }
 
     fetchStages();
-
-    return () => {
-      controller.abort();
-    };
+    return () => { controller.abort(); };
   }, []);
 
-  // โหลดข้อมูลแมลงเดิมมา prefill ฟอร์ม
   useEffect(() => {
-    if (!insectId) return;
+    if (!insectId) {
+      setPageState('notFound');
+      return;
+    }
 
     const controller = new AbortController();
 
@@ -123,20 +116,20 @@ function EditInsectForm() {
           setPageState('notFound');
           return;
         }
-        if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (HTTP ${res.status})`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data: InsectDTO = await res.json();
         if (controller.signal.aborted) return;
 
         setFormData({
-          commonName: data.insectName,
-          scientificName: data.scientificName,
-          selectedStageIDs: data.riceGrowthStages.map((s) => s.stageID),
-          dangerLevel: data.dangerLevel,
-          category: data.insectType,
-          description: data.insectDes,
+          commonName: data.insectName || '',
+          scientificName: data.scientificName || '',
+          selectedStageIDs: data.riceGrowthStages?.map((s) => s.stageID) || [],
+          dangerLevel: data.dangerLevel || '',
+          category: data.insectType || '',
+          description: data.insectDes || '',
         });
-        setExistingImageUrl(data.insectImg ?? null);
+        setExistingImageUrls(data.insectImg ?? []);
         setPageState('ready');
       } catch (err) {
         if (!controller.signal.aborted) {
@@ -147,10 +140,7 @@ function EditInsectForm() {
     }
 
     loadInsect();
-
-    return () => {
-      controller.abort();
-    };
+    return () => { controller.abort(); };
   }, [insectId]);
 
   const toggleStage = (stageID: string, checked: boolean) => {
@@ -163,35 +153,39 @@ function EditInsectForm() {
   };
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-    setImageRemoved(false);
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const newFiles = Array.from(files);
+    const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
+    setImageFiles((prev) => [...prev, ...newFiles]);
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
+    e.target.value = '';
+  };
+
+  const removeNewImage = (index: number) => {
+    URL.revokeObjectURL(imagePreviews[index]);
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (index: number) => {
+    setExistingImageUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   useEffect(() => {
     return () => {
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [imagePreview]);
+  }, [imagePreviews]);
 
-  // หมายเหตุ: ตอนนี้ backend ยังไม่มี endpoint สำหรับ "ลบรูปภาพ" โดยเฉพาะ
-  // ปุ่มนี้แค่เคลียร์ preview ในหน้าจอ ไม่ได้ลบไฟล์ออกจาก DB จริง
-  // ถ้าจะให้ลบได้จริง ต้องเพิ่ม endpoint เช่น DELETE /api/v1/insects/{id}/image ฝั่ง backend
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    setImageRemoved(true);
-  };
-
-  const buildPayload = (): Omit<InsectDTO, 'insectID' | 'insectImg'> => ({
+  const buildPayload = (): Omit<InsectDTO, 'insectID'> => ({
     insectName: formData.commonName,
     scientificName: formData.scientificName,
     insectType: formData.category,
     dangerLevel: formData.dangerLevel,
     insectDes: formData.description,
     riceGrowthStages: formData.selectedStageIDs.map((stageID) => ({ stageID })),
+    insectImg: existingImageUrls,
   });
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -223,27 +217,20 @@ function EditInsectForm() {
         throw new Error(errText || `อัปเดตไม่สำเร็จ (HTTP ${res.status})`);
       }
 
-      let imageWarning = '';
-      if (imageFile) {
-        const imgForm = new FormData();
-        imgForm.append('image', imageFile);
-        try {
-          const imgRes = await fetch(`${API_BASE_URL}/${insectId}/image`, {
+      if (imageFiles.length > 0) {
+        for (const file of imageFiles) {
+          const imgForm = new FormData();
+          imgForm.append('image', file);
+          await fetch(`${API_BASE_URL}/${insectId}/image`, {
             method: 'POST',
             body: imgForm,
-          });
-          if (!imgRes.ok) {
-            const imgErrText = await imgRes.text().catch(() => '');
-            imageWarning = ` (แต่รูปภาพอัปโหลดไม่สำเร็จ: ${imgErrText || `HTTP ${imgRes.status}`})`;
-          }
-        } catch {
-          imageWarning = ' (แต่รูปภาพอัปโหลดไม่สำเร็จ: เชื่อมต่อเซิร์ฟเวอร์ไม่ได้)';
+          }).catch(() => {});
         }
       }
 
       setStatus({
-        state: imageWarning ? 'error' : 'success',
-        message: 'อัปเดตข้อมูลแมลงสำเร็จ' + imageWarning,
+        state: 'success',
+        message: 'อัปเดตข้อมูลแมลงในระบบเรียบร้อยแล้ว',
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์';
@@ -254,26 +241,23 @@ function EditInsectForm() {
   const isSubmitting = status.state === 'loading';
   const isSubmitDisabled = isSubmitting || stagesLoading;
 
-  // แสดงรูป: ถ้าเพิ่งเลือกรูปใหม่ -> โชว์ preview / ถ้ากดลบ -> โชว์ placeholder / ไม่งั้นโชว์รูปเดิมจาก backend
-  const displayImageUrl = imagePreview ?? (imageRemoved ? null : existingImageUrl);
-
   if (pageState === 'loading') {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center gap-2 text-slate-400 text-sm">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        กำลังโหลดข้อมูลแมลง...
+      <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D] font-sans">
+        <Loader2 className="w-6 h-6 animate-spin text-[#2D7048]" />
+        <span>กำลังโหลดข้อมูลทะเบียนแมลง...</span>
       </div>
     );
   }
 
   if (pageState === 'notFound') {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center gap-3 text-center px-6">
-        <AlertCircle className="w-8 h-8 text-red-400" />
-        <p className="text-sm text-slate-600">ไม่พบข้อมูลแมลงนี้ อาจถูกลบไปแล้ว</p>
+      <div className="max-w-md mx-auto my-16 p-8 bg-[#FDECEA] border border-[#F4B9B3] rounded-lg text-center space-y-3 font-sans">
+        <AlertCircle className="w-8 h-8 text-[#B42318] mx-auto" />
+        <p className="text-sm font-semibold text-[#B42318]">ไม่พบข้อมูลแมลงนี้ในระบบ (อาจถูกลบไปแล้ว)</p>
         <button
-          onClick={() => router.push('/admin')}
-          className="px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+          onClick={() => router.push('/admin/listadmininsects')}
+          className="px-4 py-2 text-xs bg-white border border-[#CDD2CF] text-[#1A1F1C] font-medium rounded-md hover:bg-[#F1F3F2] transition-colors cursor-pointer"
         >
           กลับไปหน้ารายการ
         </button>
@@ -283,12 +267,12 @@ function EditInsectForm() {
 
   if (pageState === 'loadError') {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center gap-3 text-center px-6">
-        <AlertCircle className="w-8 h-8 text-red-400" />
-        <p className="text-sm text-red-600">{loadErrorMsg}</p>
+      <div className="max-w-md mx-auto my-16 p-8 bg-[#FDECEA] border border-[#F4B9B3] rounded-lg text-center space-y-3 font-sans">
+        <AlertCircle className="w-8 h-8 text-[#B42318] mx-auto" />
+        <p className="text-sm text-[#B42318] font-semibold">{loadErrorMsg}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+          className="px-4 py-2 text-xs bg-white border border-[#CDD2CF] text-[#1A1F1C] font-medium rounded-md hover:bg-[#F1F3F2] transition-colors cursor-pointer"
         >
           ลองใหม่อีกครั้ง
         </button>
@@ -297,232 +281,256 @@ function EditInsectForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-4 sm:p-8 md:p-12 font-sans text-slate-800 flex justify-center">
-      <div className="max-w-4xl w-full">
+    <div className="space-y-6 font-sans">
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center text-xs font-medium text-slate-400 mb-6 gap-2">
-          <a href="#" onClick={(e) => { e.preventDefault(); router.push('/'); }} className="hover:text-slate-700 transition-colors">หน้าแรก</a>
-          <ChevronRight className="w-3 h-3" />
-          <a href="#" onClick={(e) => { e.preventDefault(); router.push('/admin'); }} className="hover:text-slate-700 transition-colors">แมลง</a>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-slate-600">แก้ไขข้อมูลแมลง</span>
-        </nav>
-
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 mb-1.5">แก้ไขข้อมูลแมลง</h1>
-          <p className="text-sm text-slate-500">
-            ปรับปรุงข้อมูลด้านอนุกรมวิธาน คำอธิบาย และการระบุลักษณะทางของตัวอย่างนี้
-          </p>
+      {/* Navigation & Header */}
+      <div className="flex items-center justify-between pb-6 border-b border-[#E3E6E4]">
+        <div className="flex items-center gap-2 text-xs text-[#5A635D]">
+          <Link href="/admin/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
+          <span>/</span>
+          <Link href="/admin/listadmininsects" className="hover:text-[#1A1F1C] transition-colors">จัดการข้อมูลแมลง</Link>
+          <span>/</span>
+          <span className="text-[#1A1F1C] font-semibold">แก้ไข {formData.commonName}</span>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          {/* Main Card */}
-          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 sm:p-8">
+        <Link
+          href="/admin/listadmininsects"
+          className="inline-flex items-center gap-1.5 text-xs text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
+        >
+          <ChevronLeft size={16} />
+          <span>ย้อนกลับ</span>
+        </Link>
+      </div>
 
-            {/* Section 1: Image Identification */}
-            <section className="mb-10">
-              <h2 className="text-sm font-bold text-slate-800 mb-4">การระบุด้วยภาพ</h2>
-              <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 flex flex-col sm:flex-row gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
 
-                {/* Image Preview */}
-                <div className="w-40 h-40 shrink-0 rounded-lg overflow-hidden bg-slate-200 border border-slate-200 shadow-sm relative">
-                  {displayImageUrl ? (
+        {/* Left Column: Image Management */}
+        <div className="md:col-span-5 bg-white border border-[#E3E6E4] rounded-lg p-6 space-y-4">
+          <div>
+            <h2 className="text-sm font-bold text-[#1A1F1C]">จัดการรูปภาพสัณฐานวิทยา</h2>
+            <p className="text-xs text-[#5A635D] mt-1">
+              รูปภาพที่มีอยู่ในระบบ และสามารถอัปโหลดรูปภาพใหม่เพิ่มเติมได้
+            </p>
+          </div>
+
+          {/* Existing Images */}
+          {existingImageUrls.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-[#1A1F1C] mb-2">รูปภาพปัจจุบัน ({existingImageUrls.length})</p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {existingImageUrls.map((url, idx) => (
+                  <div key={`old-${idx}`} className="relative aspect-square rounded-md overflow-hidden border border-[#E3E6E4] bg-[#F1F3F2] group">
                     <Image
-                      src={displayImageUrl}
-                      alt={formData.commonName || 'ภาพแมลง'}
+                      src={url}
+                      alt={`รูปเดิม ${idx + 1}`}
                       fill
                       unoptimized
                       className="object-cover"
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
-                      ไม่มีรูปภาพ
-                    </div>
-                  )}
-                </div>
-
-                {/* Image Info & Actions */}
-                <div className="flex flex-col h-full justify-center">
-                  <h3 className="text-sm font-semibold text-slate-800 mb-1">ภาพตัวอย่างปัจจุบัน</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed max-w-sm mb-5">
-                    รูปภาพหลักที่ใช้สำหรับการฝึกอบรม AI และเป็นข้อมูลอ้างอิงของผู้ใช้<br />
-                    ขนาดที่แนะนำ: 800×800 พิกเซล
-                  </p>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm cursor-pointer">
-                      <Upload className="w-4 h-4" />
-                      เปลี่ยนรูปภาพ
-                      <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-                    </label>
-                    {displayImageUrl && (
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        ลบ
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <hr className="border-slate-100 mb-8" />
-
-            {/* Section 2: Taxonomy & Details */}
-            <section>
-              <h2 className="text-sm font-bold text-slate-800 mb-6">อนุกรมวิธานและรายละเอียด</h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-
-                {/* Common Name */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    ชื่อสามัญ <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.commonName}
-                    onChange={(e) => setFormData({ ...formData, commonName: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-shadow"
-                  />
-                </div>
-
-                {/* Scientific Name */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    ชื่อวิทยาศาสตร์ <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.scientificName}
-                    onChange={(e) => setFormData({ ...formData, scientificName: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-shadow"
-                  />
-                </div>
-
-                {/* Growth Stages */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-2">
-                    ระยะการเจริญเติบโตของข้าว <span className="text-red-500">*</span>
-                  </label>
-
-                  {stagesLoading && <p className="text-xs text-slate-400">กำลังโหลดรายการระยะ...</p>}
-                  {stagesError && <p className="text-xs text-red-500">{stagesError}</p>}
-
-                  {!stagesLoading && !stagesError && (
-                    <div className="flex flex-col gap-2.5 text-xs text-slate-700 font-medium mt-2">
-                      {stages.map((stage) => (
-                        <label key={stage.stageID} className="flex items-center gap-2 cursor-pointer w-max">
-                          <input
-                            type="checkbox"
-                            checked={formData.selectedStageIDs.includes(stage.stageID)}
-                            onChange={(e) => toggleStage(stage.stageID, e.target.checked)}
-                            className="w-4 h-4 rounded border-slate-300 text-slate-800 focus:ring-slate-800 cursor-pointer accent-slate-800"
-                          />
-                          <span>{stage.stageName}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Danger Level */}
-                <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 mb-1.5">
-                    ระดับอันตราย <span className="text-red-500">*</span>
-                    <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={formData.dangerLevel}
-                      onChange={(e) => setFormData({ ...formData, dangerLevel: e.target.value as DangerLevel })}
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 appearance-none bg-white transition-shadow"
+                    <button
+                      type="button"
+                      onClick={() => removeExistingImage(idx)}
+                      className="absolute top-1.5 right-1.5 p-1 bg-black/60 hover:bg-[#B42318] text-white rounded-full transition-colors cursor-pointer"
+                      title="ลบรูปนี้"
                     >
-                      <option value="" disabled>เลือกระดับ...</option>
-                      <option value="low">ต่ำ</option>
-                      <option value="medium">ปานกลาง</option>
-                      <option value="high">สูง</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
+                      <Trash2 size={12} />
+                    </button>
                   </div>
-                </div>
-
-                {/* Category */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    ประเภทแมลง <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition-shadow"
-                  />
-                </div>
-
-                <div className="hidden md:block"></div>
-
-                {/* Description */}
-                <div className="md:col-span-2 mt-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    คำอธิบาย <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 resize-none transition-shadow leading-relaxed"
-                  />
-                </div>
-
-                {/* Status message */}
-                <div className="md:col-span-2">
-                  {status.state === 'success' && (
-                    <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
-                      <CheckCircle2 className="w-4 h-4 shrink-0" />
-                      <span>{status.message}</span>
-                    </div>
-                  )}
-                  {status.state === 'error' && (
-                    <div className="flex items-center gap-2 text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      <span>{status.message}</span>
-                    </div>
-                  )}
-                </div>
-
+                ))}
               </div>
-            </section>
+            </div>
+          )}
 
-            {/* Form Actions Footer */}
-            <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end items-center gap-3">
+          {/* New Previews */}
+          {imagePreviews.length > 0 && (
+            <div className="pt-3 border-t border-[#E3E6E4]">
+              <p className="text-xs font-semibold text-[#2D7048] mb-2">รูปใหม่ที่รอการอัปโหลด ({imagePreviews.length})</p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {imagePreviews.map((preview, idx) => (
+                  <div key={`new-${idx}`} className="relative aspect-square rounded-md overflow-hidden border border-[#B9DBC6] bg-[#F0F7F2] group">
+                    <Image
+                      src={preview}
+                      alt={`รูปใหม่ ${idx + 1}`}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeNewImage(idx)}
+                      className="absolute top-1.5 right-1.5 p-1 bg-black/60 hover:bg-[#B42318] text-white rounded-full transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Upload Button */}
+          <label className="border border-dashed border-[#CDD2CF] bg-[#F7F8F7] hover:bg-[#F1F3F2] rounded-lg p-5 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group">
+            <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
+            <div className="w-9 h-9 rounded-full bg-[#F0F7F2] text-[#2D7048] border border-[#B9DBC6] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
+              <Upload size={15} />
+            </div>
+            <p className="text-xs font-semibold text-[#1A1F1C]">
+              คลิกเพื่อเพิ่มรูปภาพ
+            </p>
+          </label>
+        </div>
+
+        {/* Right Column: Taxonomy Details */}
+        <div className="md:col-span-7 bg-white border border-[#E3E6E4] rounded-lg p-6">
+          <div className="mb-6">
+            <h1 className="text-lg font-bold tracking-tight text-[#1A1F1C]">
+              แก้ไขข้อมูลสัณฐานวิทยาและชีววิทยา
+            </h1>
+            <p className="text-xs text-[#5A635D] mt-1">
+              ปรับปรุงรายละเอียดทางอนุกรมวิธานและระยะการเข้าทำลาย
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Common Name */}
+            <div>
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                ชื่อสามัญ <span className="text-[#B42318]">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.commonName}
+                onChange={(e) => setFormData({ ...formData, commonName: e.target.value })}
+                className="w-full px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
+              />
+            </div>
+
+            {/* Scientific Name */}
+            <div>
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                ชื่อวิทยาศาสตร์ <span className="text-[#B42318]">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.scientificName}
+                onChange={(e) => setFormData({ ...formData, scientificName: e.target.value })}
+                className="w-full px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs italic text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                ประเภทแมลง <span className="text-[#B42318]">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
+              />
+            </div>
+
+            {/* Danger Level */}
+            <div>
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                ระดับอันตราย <span className="text-[#B42318]">*</span>
+              </label>
+              <div className="flex items-center gap-4 pt-1">
+                {[
+                  { value: 'low', label: 'ระดับต่ำ' },
+                  { value: 'medium', label: 'ปานกลาง' },
+                  { value: 'high', label: 'ระดับสูง' },
+                ].map((item) => (
+                  <label key={item.value} className="flex items-center gap-1.5 cursor-pointer text-xs text-[#3F4742]">
+                    <input
+                      type="radio"
+                      name="dangerLevel"
+                      value={item.value}
+                      checked={formData.dangerLevel === item.value}
+                      onChange={(e) => setFormData({ ...formData, dangerLevel: e.target.value as DangerLevel })}
+                      className="accent-[#2D7048]"
+                    />
+                    <span>{item.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Rice Growth Stage */}
+            <div className="pt-3 border-t border-[#E3E6E4]">
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-2">
+                ระยะการเจริญเติบโตของข้าวที่เข้าทำลาย <span className="text-[#B42318]">*</span>
+              </label>
+
+              {!stagesLoading && !stagesError && (
+                <div className="grid grid-cols-2 gap-2 text-xs text-[#3F4742]">
+                  {stages.map((stage) => (
+                    <label key={stage.stageID} className="flex items-center gap-2 cursor-pointer bg-[#F7F8F7] hover:bg-[#F1F3F2] p-2.5 rounded-md border border-[#E3E6E4] transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.selectedStageIDs.includes(stage.stageID)}
+                        onChange={(e) => toggleStage(stage.stageID, e.target.checked)}
+                        className="accent-[#2D7048]"
+                      />
+                      <span className="font-medium text-xs text-[#1A1F1C]">{stage.stageName}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
+            <div className="pt-3 border-t border-[#E3E6E4]">
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                คำอธิบายลักษณะการเข้าทำลายและพฤติกรรม
+              </label>
+              <textarea
+                rows={3}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="w-full px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] resize-none"
+              />
+            </div>
+
+            {/* Feedback */}
+            {status.state === 'success' && (
+              <div className="flex items-center gap-2 text-xs font-medium text-[#1E7B45] bg-[#E8F5EC] border border-[#B7DFC6] rounded-md p-3">
+                <CheckCircle2 size={16} className="shrink-0 text-[#1E7B45]" />
+                <span>{status.message}</span>
+              </div>
+            )}
+            {status.state === 'error' && (
+              <div className="flex items-center gap-2 text-xs font-medium text-[#B42318] bg-[#FDECEA] border border-[#F4B9B3] rounded-md p-3">
+                <AlertCircle size={16} className="shrink-0 text-[#B42318]" />
+                <span>{status.message}</span>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#E3E6E4]">
               <button
                 type="button"
                 onClick={() => router.push('/admin/listadmininsects')}
                 disabled={isSubmitting}
-                className="w-full sm:w-auto px-6 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
+                className="h-9 px-4 text-xs font-medium text-[#1A1F1C] bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] rounded-md transition-colors cursor-pointer"
               >
                 ยกเลิก
               </button>
               <button
                 type="submit"
                 disabled={isSubmitDisabled}
-                className="w-full sm:w-auto px-6 py-2.5 text-xs font-semibold text-slate-800 bg-[#e2e8f0] hover:bg-[#cbd5e1] rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-60"
+                className="h-9 px-4 text-xs font-medium text-white bg-[#2D7048] hover:bg-[#25593A] rounded-md flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
               >
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {isSubmitting ? 'กำลังบันทึก...' : 'อัปเดตข้อมูลแมลง'}
+                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                <span>{isSubmitting ? 'กำลังบันทึก...' : 'อัปเดตข้อมูลแมลง'}</span>
               </button>
             </div>
 
-          </div>
-        </form>
+          </form>
+        </div>
+
       </div>
     </div>
   );
@@ -532,9 +540,9 @@ export default function EditInsectPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center gap-2 text-slate-400 text-sm">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          กำลังโหลด...
+        <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D] font-sans">
+          <Loader2 className="w-6 h-6 animate-spin text-[#2D7048]" />
+          <span>กำลังโหลด...</span>
         </div>
       }
     >

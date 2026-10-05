@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
 import {
   Search,
@@ -9,15 +9,13 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
-  Bug,
-  Eye,
+  ArrowRight,
+  Filter,
 } from 'lucide-react';
 
-// ตั้งค่าใน .env.local: NEXT_PUBLIC_API_URL=http://localhost:8080
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const API_BASE_URL = `${API_ORIGIN}/api/v1/insects`;
 
-// ตรงกับ com.ricebugai.aiinsectapi.v1.dtos.RiceGrowthStageDTO
 interface RiceGrowthStageDTO {
   stageID: string;
   stageName: string;
@@ -25,7 +23,6 @@ interface RiceGrowthStageDTO {
   durationRange: string;
 }
 
-// ตรงกับ com.ricebugai.aiinsectapi.v1.dtos.InsectDTO
 interface InsectDTO {
   insectID: string;
   insectName: string;
@@ -33,44 +30,20 @@ interface InsectDTO {
   insectType: string;
   dangerLevel: string;
   insectDes: string;
-  insectImg?: string | null;
+  insectImg?: string[] | null;
   riceGrowthStages: RiceGrowthStageDTO[];
 }
 
-const DANGER_LABEL: Record<string, string> = {
-  low: 'ต่ำ',
-  medium: 'ปานกลาง',
-  high: 'สูง',
+const DANGER_BADGE: Record<string, { label: string; className: string }> = {
+  high: { label: 'อันตรายสูง', className: 'bg-[#FDECEA] text-[#B42318] border-[#F4B9B3]' },
+  medium: { label: 'ปานกลาง', className: 'bg-[#FFF4E0] text-[#8A5300] border-[#F0D29A]' },
+  low: { label: 'อันตรายต่ำ', className: 'bg-[#E8F5EC] text-[#1E7B45] border-[#B7DFC6]' },
 };
 
-const DANGER_STYLE: Record<string, string> = {
-  low: 'bg-emerald-50 text-emerald-700',
-  medium: 'bg-amber-50 text-amber-700',
-  high: 'bg-red-50 text-red-700',
-};
-
-const CARD_COLORS = [
-  '#3b4733',
-  '#7a9e35',
-  '#9c3f25',
-  '#6e7a4b',
-  '#523e25',
-  '#6a8532',
-  '#417a41',
-  '#db785a',
-];
-
-const getCardColor = (id: string) => {
-  const sum = id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  return CARD_COLORS[sum % CARD_COLORS.length];
-};
-
-const ALL_STAGES = 'ทั้งหมด';
+const ALL_STAGES = 'ทุกระยะการเติบโต';
 const ITEMS_PER_PAGE = 8;
 
 export default function MemberListInsects() {
-  const router = useRouter();
-
   const [insects, setInsects] = useState<InsectDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,336 +52,228 @@ export default function MemberListInsects() {
   const [selectedStage, setSelectedStage] = useState(ALL_STAGES);
   const [page, setPage] = useState(1);
 
-  // =========================
-  // Fetch insects (ฟังก์ชัน fetch ล้วนๆ)
-  // =========================
-  const doFetchInsects = useCallback(
-    async (signal?: AbortSignal): Promise<InsectDTO[]> => {
-      const res = await fetch(API_BASE_URL, { signal });
-      if (!res.ok) {
-        throw new Error(`โหลดข้อมูลไม่สำเร็จ (HTTP ${res.status})`);
-      }
-      return res.json();
-    },
-    []
-  );
-
-  // สำหรับปุ่ม "ลองใหม่อีกครั้ง"
   const fetchInsects = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await doFetchInsects();
-      setInsects(data);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'
-      );
+      const res = await fetch(API_BASE_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setInsects(Array.isArray(data) ? data : []);
+    } catch {
+      setError('ไม่สามารถเชื่อมต่อกับระบบฐานข้อมูลได้ในขณะนี้');
     } finally {
       setLoading(false);
     }
-  }, [doFetchInsects]);
+  }, []);
 
-  // Data fetching ตอน mount
   useEffect(() => {
-    const controller = new AbortController();
+    fetchInsects();
+  }, [fetchInsects]);
 
-    async function loadInsects() {
-      try {
-        const data = await doFetchInsects(controller.signal);
-        if (!controller.signal.aborted) {
-          setInsects(data);
-        }
-      } catch (err) {
-        if (!controller.signal.aborted) {
-          setError(
-            err instanceof Error ? err.message : 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'
-          );
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadInsects();
-
-    return () => {
-      controller.abort();
-    };
-  }, [doFetchInsects]);
-
-  // =========================
-  // Stage filters
-  // =========================
-  const stageFilters = useMemo(() => {
-    const stageNames = new Set<string>();
+  const stageOptions = useMemo(() => {
+    const stageSet = new Set<string>();
     insects.forEach((insect) => {
-      insect.riceGrowthStages?.forEach((stage) => {
-        stageNames.add(stage.stageName);
+      insect.riceGrowthStages?.forEach((st) => {
+        if (st.stageName) stageSet.add(st.stageName.trim());
       });
     });
-    return [ALL_STAGES, ...Array.from(stageNames).sort()];
+    return [ALL_STAGES, ...Array.from(stageSet)];
   }, [insects]);
 
-  // =========================
-  // Search + Filter
-  // =========================
   const filteredInsects = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-
+    const q = searchTerm.trim().toLowerCase();
     return insects.filter((insect) => {
-      const matchesSearch =
-        term === '' ||
-        insect.insectName.toLowerCase().includes(term) ||
-        insect.scientificName.toLowerCase().includes(term) ||
-        insect.insectType.toLowerCase().includes(term);
+      const matchSearch =
+        !q ||
+        insect.insectName?.toLowerCase().includes(q) ||
+        insect.scientificName?.toLowerCase().includes(q) ||
+        insect.insectType?.toLowerCase().includes(q);
 
-      const matchesStage =
+      const matchStage =
         selectedStage === ALL_STAGES ||
         insect.riceGrowthStages?.some(
-          (stage) => stage.stageName === selectedStage
+          (st) => st.stageName?.trim() === selectedStage
         );
 
-      return matchesSearch && matchesStage;
+      return matchSearch && matchStage;
     });
   }, [insects, searchTerm, selectedStage]);
 
-  // =========================
-  // Pagination
-  // =========================
   const totalPages = Math.max(1, Math.ceil(filteredInsects.length / ITEMS_PER_PAGE));
-  const currentPageSafe = Math.min(page, totalPages);
-
-  const pagedInsects = filteredInsects.slice(
-    (currentPageSafe - 1) * ITEMS_PER_PAGE,
-    currentPageSafe * ITEMS_PER_PAGE
-  );
-
-  const goToPage = (p: number) => {
-    setPage(Math.min(Math.max(p, 1), totalPages));
-  };
-
-  const pageNumbers = useMemo(() => {
-    return Array.from({ length: totalPages }, (_, i) => i + 1)
-      .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPageSafe) <= 1)
-      .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
-        if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
-        acc.push(p);
-        return acc;
-      }, []);
-  }, [totalPages, currentPageSafe]);
-
-  const rangeStart = filteredInsects.length === 0 ? 0 : (currentPageSafe - 1) * ITEMS_PER_PAGE + 1;
-  const rangeEnd = Math.min(currentPageSafe * ITEMS_PER_PAGE, filteredInsects.length);
+  const currentInsects = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return filteredInsects.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredInsects, page]);
 
   return (
-    <div className="min-h-screen bg-[#F3F5F1] p-4 sm:p-8 md:p-12 font-sans text-gray-800">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
+      <div className="max-w-6xl mx-auto px-6 pt-8">
 
-        {/* Header Section */}
-        <div className="mb-10">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 tracking-tight">
-            สารานุกรมแมลงศัตรูพืชข้าว
+        {/* Header Strip */}
+        <div className="pb-6 mb-8 border-b border-[#E3E6E4]">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
+            สารานุกรมแมลงศัตรูข้าว
           </h1>
-          <p className="text-sm md:text-base text-gray-500 max-w-2xl leading-relaxed">
-            ค้นหาและศึกษาข้อมูลแมลงศัตรูพืชที่พบในนาข้าว
-            เพื่อทำความเข้าใจลักษณะทางกายภาพ พฤติกรรม และวิธีรับมือ
+          <p className="text-sm text-[#5A635D] mt-1">
+            ฐานข้อมูลสัณฐานวิทยาชีวภาพ ลักษณะการทำลายผลผลิตข้าว และระดับความรุนแรง
           </p>
         </div>
 
-        {/* Search & Filter Bar */}
-        <div className="bg-white p-4 rounded-xl flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between border border-gray-200 mb-8">
-
-          {/* Search */}
-          <div className="relative w-full lg:w-[45%]">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -trangray-y-1/2" />
+        {/* Search & Filter Matrix */}
+        <div className="bg-white border border-[#E3E6E4] rounded-lg p-4 mb-8 flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="relative w-full md:w-80">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9AA29D]" />
             <input
               type="text"
+              placeholder="ค้นหาชื่อแมลง หรือชื่อวิทยาศาสตร์..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setPage(1);
               }}
-              placeholder="ค้นหาตามชื่อสามัญ ชื่อวิทยาศาสตร์ หรือชนิดของศัตรูพืช..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-gray-400 focus:bg-white transition-colors"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-sm text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
             />
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
-            <span className="text-[11px] font-bold text-gray-400 whitespace-nowrap">
-              กรองตามขั้นตอน:
-            </span>
-            <div className="flex gap-2">
-              {stageFilters.map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => {
-                    setSelectedStage(filter);
-                    setPage(1);
-                  }}
-                  className={`px-4 py-2 text-xs font-bold rounded-full whitespace-nowrap transition-colors ${
-                    filter === selectedStage
-                      ? 'bg-gray-800 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {filter}
-                </button>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <Filter size={14} className="text-[#5A635D] shrink-0" />
+            <select
+              value={selectedStage}
+              onChange={(e) => {
+                setSelectedStage(e.target.value);
+                setPage(1);
+              }}
+              className="w-full md:w-auto px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-sm text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
+            >
+              {stageOptions.map((st) => (
+                <option key={st} value={st}>
+                  ระยะข้าว: {st}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex items-center justify-center gap-2 py-20 text-gray-400 text-sm">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            กำลังโหลดข้อมูล...
+        {/* Content State Handling */}
+        {loading ? (
+          <div className="py-20 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D]">
+            <Loader2 className="animate-spin text-[#2D7048]" size={24} />
+            <span>กำลังโหลดข้อมูลสารานุกรมแมลง...</span>
           </div>
-        )}
-
-        {/* Error */}
-        {!loading && error && (
-          <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center bg-white rounded-xl border border-gray-200">
-            <AlertCircle className="w-8 h-8 text-red-400" />
-            <p className="text-sm text-red-600 font-medium">{error}</p>
+        ) : error ? (
+          <div className="py-12 text-center bg-[#FDECEA] border border-[#F4B9B3] rounded-lg p-6 text-sm text-[#B42318] flex flex-col items-center gap-2">
+            <AlertCircle size={24} />
+            <span>{error}</span>
             <button
               onClick={fetchInsects}
-              className="px-4 py-1.5 text-xs bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+              className="mt-2 px-3 py-1.5 bg-white border border-[#CDD2CF] text-[#1A1F1C] rounded-md text-sm font-medium hover:bg-[#F1F3F2] transition-colors cursor-pointer"
             >
               ลองใหม่อีกครั้ง
             </button>
           </div>
-        )}
-
-        {/* Empty */}
-        {!loading && !error && filteredInsects.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-2 py-20 text-center bg-white rounded-xl border border-gray-200">
-            <Bug className="w-8 h-8 text-gray-300" />
-            <p className="text-sm text-gray-500">
-              {insects.length === 0
-                ? 'ยังไม่มีข้อมูลแมลงในระบบ'
-                : 'ไม่พบแมลงที่ตรงกับคำค้นหาหรือตัวกรอง'}
-            </p>
+        ) : filteredInsects.length === 0 ? (
+          <div className="py-16 text-center bg-white border border-[#E3E6E4] rounded-lg p-8 text-sm text-[#5A635D]">
+            ไม่พบข้อมูลแมลงที่ตรงกับเงื่อนไขการค้นหา
           </div>
-        )}
+        ) : (
+          <div>
+            {/* Insect Grid (4 Columns) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+              {currentInsects.map((insect) => {
+                const danger = DANGER_BADGE[insect.dangerLevel?.toLowerCase()] || {
+                  label: insect.dangerLevel || 'ทั่วไป',
+                  className: 'bg-[#F1F3F2] text-[#3F4742] border-[#E3E6E4]',
+                };
 
-        {/* Pest Grid */}
-        {!loading && !error && pagedInsects.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            {pagedInsects.map((insect) => (
-              <div
-                key={insect.insectID}
-                className="bg-white rounded-2xl overflow-hidden border border-gray-200 flex flex-col h-full group transition-all duration-300"
-              >
-                {/* Image */}
-                <div
-                  className="h-44 w-full relative overflow-hidden flex items-center justify-center"
-                  style={{ backgroundColor: getCardColor(insect.insectID) }}
-                >
-                  {insect.insectImg ? (
-                    <Image
-                      src={insect.insectImg}
-                      alt={insect.insectName}
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
-                  ) : (
-                    <Bug className="w-8 h-8 text-white/60" />
-                  )}
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none" />
-                </div>
+                const firstImg = insect.insectImg && insect.insectImg.length > 0 ? insect.insectImg[0] : null;
 
-                {/* Card Content */}
-                <div className="p-5 flex flex-col flex-grow">
-                  <span className="text-[10px] font-bold text-gray-400 tracking-wide mb-1 uppercase">
-                    {insect.scientificName}
-                  </span>
-                  <h3 className="text-[15px] font-bold text-gray-900 mb-2">
-                    {insect.insectName}
-                  </h3>
-                  <p className="text-xs text-gray-500 line-clamp-2 mb-6 flex-grow leading-relaxed">
-                    {insect.insectDes}
-                  </p>
-
-                  {/* Tags */}
-                  <div className="flex items-center gap-1.5 flex-wrap mb-4">
-                    <span className="text-[11px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">
-                      {insect.riceGrowthStages?.length
-                        ? insect.riceGrowthStages.map((s) => s.stageName).join(', ')
-                        : 'ไม่ระบุระยะ'}
-                    </span>
-                    <span
-                      className={`text-[11px] font-bold px-2 py-1 rounded ${
-                        DANGER_STYLE[insect.dangerLevel] ?? 'bg-gray-100 text-gray-600'
-                      }`}
-                    >
-                      {DANGER_LABEL[insect.dangerLevel] ?? insect.dangerLevel}
-                    </span>
-                  </div>
-
-                  {/* View Details Button */}
-                  <button
-                    onClick={() => router.push(`/member/viewinsect?id=${insect.insectID}`)}
-                    className="w-full mt-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 group-hover:bg-gray-800 group-hover:text-white text-gray-600 text-xs font-bold rounded-lg border border-gray-200 group-hover:border-transparent transition-all"
+                return (
+                  <Link
+                    key={insect.insectID}
+                    href={`/member/viewinsect?id=${insect.insectID}`}
+                    className="group bg-white hover:border-[#CDD2CF] hover:shadow-xs border border-[#E3E6E4] rounded-lg p-4 flex flex-col justify-between transition-all duration-150"
                   >
-                    <Eye className="w-4 h-4" />
-                    ดูรายละเอียด
+                    <div>
+                      {/* Card Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[13px] text-[#5A635D] font-medium">
+                          {insect.insectType || 'ศัตรูข้าว'}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-sm border text-xs font-medium ${danger.className}`}>
+                          {danger.label}
+                        </span>
+                      </div>
+
+                      {/* Image Container */}
+                      <div className="w-full h-36 bg-[#F1F3F2] rounded-md border border-[#E3E6E4] overflow-hidden mb-3 relative flex items-center justify-center">
+                        {firstImg ? (
+                          <Image
+                            src={firstImg}
+                            alt={insect.insectName}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-200"
+                            unoptimized
+                          />
+                        ) : (
+                          <span className="text-xs text-[#9AA29D]">ไม่มีรูปภาพ</span>
+                        )}
+                      </div>
+
+                      {/* Title & Taxonomy */}
+                      <h3 className="text-[15px] font-semibold text-[#1A1F1C] group-hover:text-[#2D7048] transition-colors leading-snug">
+                        {insect.insectName}
+                      </h3>
+                      <p className="text-xs italic text-[#5A635D] mt-0.5 truncate">
+                        {insect.scientificName || '—'}
+                      </p>
+
+                      <div className="mt-2.5 pt-2.5 border-t border-[#E3E6E4] text-xs text-[#5A635D] space-y-1">
+                        <div className="truncate">
+                          <span className="text-[#9AA29D]">ระยะข้าว: </span>
+                          <span>
+                            {insect.riceGrowthStages?.map((s) => s.stageName).join(', ') || 'ทุกระยะ'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-2.5 border-t border-[#E3E6E4] flex items-center justify-between text-xs text-[#2D7048] font-medium">
+                      <span>ดูรายละเอียด</span>
+                      <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 border-t border-[#E3E6E4] text-sm text-[#5A635D]">
+                <div>
+                  แสดง {(page - 1) * ITEMS_PER_PAGE + 1} - {Math.min(page * ITEMS_PER_PAGE, filteredInsects.length)} จาก {filteredInsects.length} รายการ
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="p-2 bg-white hover:bg-[#F1F3F2] disabled:opacity-40 border border-[#CDD2CF] rounded-md text-[#1A1F1C] transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="text-xs font-medium text-[#1A1F1C] px-2">
+                    {page} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="p-2 bg-white hover:bg-[#F1F3F2] disabled:opacity-40 border border-[#CDD2CF] rounded-md text-[#1A1F1C] transition-colors cursor-pointer"
+                  >
+                    <ChevronRight size={16} />
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {!loading && !error && filteredInsects.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-6">
-            <span className="text-sm font-semibold text-gray-500">
-              แสดงผลลัพธ์ {rangeStart} ถึง {rangeEnd} จากทั้งหมด {filteredInsects.length} รายการ
-            </span>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => goToPage(currentPageSafe - 1)}
-                disabled={currentPageSafe === 1}
-                className="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-400 bg-white hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              {pageNumbers.map((p, idx) =>
-                p === 'ellipsis' ? (
-                  <div key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm font-bold tracking-widest">
-                    ...
-                  </div>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => goToPage(p as number)}
-                    className={
-                      p === currentPageSafe
-                        ? 'w-8 h-8 flex items-center justify-center rounded border border-emerald-200 bg-[#dcfce7] text-[#166534] font-bold text-sm'
-                        : 'w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-600 font-bold text-sm bg-white hover:bg-gray-50 transition-colors'
-                    }
-                  >
-                    {p}
-                  </button>
-                )
-              )}
-
-              <button
-                onClick={() => goToPage(currentPageSafe + 1)}
-                disabled={currentPageSafe === totalPages}
-                className="w-8 h-8 flex items-center justify-center rounded border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+            )}
           </div>
         )}
 

@@ -1,22 +1,19 @@
 'use client';
 
-import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
-import { Upload, X, Save, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Upload, X, Save, Loader2, AlertCircle, CheckCircle2, ChevronLeft } from 'lucide-react';
 
-// ตั้งค่าใน .env.local: NEXT_PUBLIC_API_URL=http://localhost:8080
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const CHEMICALS_API_URL = `${API_ORIGIN}/api/v1/chemicals`;
 const INSECTS_API_URL = `${API_ORIGIN}/api/v1/insects`;
 
-// ตรงกับ com.ricebugai.aiinsectapi.v1.dtos.InsectDTO (เอาแค่ field ที่ใช้ในหน้านี้)
 interface InsectOption {
   insectID: string;
   insectName: string;
 }
 
-// ตรงกับ com.ricebugai.aiinsectapi.v1.dtos.ChemicalDTO
 interface ChemicalDTO {
   chemicalID?: string;
   chemicalName: string;
@@ -26,7 +23,7 @@ interface ChemicalDTO {
   dosageRate: number;
   dosageUnit: string;
   toxicityLevel: string;
-  chemicalImg?: string | null; // response = URL, request = ไม่ต้องส่ง (รูปแยกเป็น MultipartFile)
+  chemicalImg?: string | null;
   description: string;
   warning: string;
   targetInsects: Pick<InsectOption, 'insectID'>[];
@@ -37,7 +34,7 @@ interface FormState {
   activeIngredient: string;
   property: string;
   usageMethod: string;
-  dosageRate: string; // เก็บเป็น string ตอนกรอก แล้วค่อย parse เป็น number ตอน submit
+  dosageRate: string;
   dosageUnit: string;
   toxicityLevel: string;
   description: string;
@@ -63,12 +60,10 @@ const initialFormState: FormState = {
 };
 
 export default function AddChemicalPage() {
-  const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<FormState>(initialFormState);
 
-  // รายชื่อแมลงทั้งหมดจาก backend สำหรับ autocomplete
   const [allInsects, setAllInsects] = useState<InsectOption[]>([]);
   const [insectsLoading, setInsectsLoading] = useState(true);
   const [insectsError, setInsectsError] = useState<string | null>(null);
@@ -83,21 +78,16 @@ export default function AddChemicalPage() {
 
   const [status, setStatus] = useState<Status>({ state: 'idle', message: '' });
 
-  // โหลดรายชื่อแมลงทั้งหมดมาไว้ค้นหาแบบ autocomplete
-  // setState ทุกตัวอยู่หลัง await → ไม่ synchronous → ไม่โดนเตือน
   useEffect(() => {
     const controller = new AbortController();
 
     async function loadInsects() {
       try {
         const res = await fetch(INSECTS_API_URL, { signal: controller.signal });
-
         if (controller.signal.aborted) return;
-
         if (!res.ok) throw new Error(`โหลดรายชื่อแมลงไม่สำเร็จ (HTTP ${res.status})`);
         const data: InsectOption[] = await res.json();
-
-        if (!controller.signal.aborted) setAllInsects(data);
+        if (!controller.signal.aborted) setAllInsects(Array.isArray(data) ? data : []);
       } catch (err) {
         if (!controller.signal.aborted) {
           setInsectsError(err instanceof Error ? err.message : 'โหลดรายชื่อแมลงไม่สำเร็จ');
@@ -108,13 +98,11 @@ export default function AddChemicalPage() {
     }
 
     loadInsects();
-
     return () => {
       controller.abort();
     };
   }, []);
 
-  // ปิด dropdown เมื่อคลิกนอกช่อง
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -165,6 +153,15 @@ export default function AddChemicalPage() {
     };
   }, [imagePreview]);
 
+  const handleReset = () => {
+    setFormData(initialFormState);
+    setTargetInsects([]);
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    setStatus({ state: 'idle', message: '' });
+  };
+
   const buildPayload = (): Omit<ChemicalDTO, 'chemicalID' | 'chemicalImg'> => ({
     chemicalName: formData.chemicalName,
     activeIngredient: formData.activeIngredient,
@@ -175,7 +172,6 @@ export default function AddChemicalPage() {
     toxicityLevel: formData.toxicityLevel,
     description: formData.description,
     warning: formData.warning,
-    // ตอน add/edit backend รับแค่ insectID ต่อ object พอ
     targetInsects: targetInsects.map((i) => ({ insectID: i.insectID })),
   });
 
@@ -236,14 +232,11 @@ export default function AddChemicalPage() {
 
       setStatus({
         state: imageWarning ? 'error' : 'success',
-        message: 'บันทึกข้อมูลสารเคมีสำเร็จ' + imageWarning,
+        message: 'บันทึกข้อมูลสารเคมีลงฐานข้อมูลสำเร็จ' + imageWarning,
       });
 
       if (!imageWarning) {
-        setFormData(initialFormState);
-        setTargetInsects([]);
-        setImageFile(null);
-        setImagePreview(null);
+        handleReset();
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์';
@@ -255,281 +248,322 @@ export default function AddChemicalPage() {
   const isSubmitDisabled = isSubmitting || insectsLoading;
 
   return (
-    <div className="min-h-screen bg-[#F3F5F1] p-4 sm:p-8 flex items-center justify-center font-sans text-gray-800">
-      <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-12 gap-6">
+    <div className="space-y-6 font-sans">
+
+      {/* Navigation & Header */}
+      <div className="flex items-center justify-between pb-6 border-b border-[#E3E6E4]">
+        <div className="flex items-center gap-2 text-xs text-[#5A635D]">
+          <Link href="/admin/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
+          <span>/</span>
+          <Link href="/admin/listadminchemicals" className="hover:text-[#1A1F1C] transition-colors">จัดการข้อมูลสารเคมี</Link>
+          <span>/</span>
+          <span className="text-[#1A1F1C] font-semibold">เพิ่มทะเบียนสารเคมี</span>
+        </div>
+
+        <Link
+          href="/admin/listadminchemicals"
+          className="inline-flex items-center gap-1.5 text-xs text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
+        >
+          <ChevronLeft size={16} />
+          <span>ย้อนกลับ</span>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
 
         {/* Left Column: Image Upload */}
-        <div className="md:col-span-5 bg-white rounded-2xl p-6 shadow-sm border border-gray-200 flex flex-col h-fit">
+        <div className="md:col-span-5 bg-white border border-[#E3E6E4] rounded-lg p-6 space-y-4">
           <div>
-            <h2 className="text-base font-bold text-gray-900">ภาพสารเคมี</h2>
-            <p className="text-xs text-gray-500 mt-1">
-              โปรดอัปโหลดรูปภาพอ้างอิงที่มีความคมชัดและความละเอียดสูง
+            <h2 className="text-sm font-bold text-[#1A1F1C]">ภาพบรรจุภัณฑ์สารเคมี</h2>
+            <p className="text-xs text-[#5A635D] mt-1">
+              อัปโหลดภาพฉลากหรือบรรจุภัณฑ์ที่มีความชัดเจน
             </p>
           </div>
 
-          <label className="mt-6 relative border-2 border-dashed border-gray-200 bg-gray-50/50 rounded-xl p-8 flex flex-col items-center justify-center text-center min-h-[320px] hover:border-green-400 transition-colors cursor-pointer group overflow-hidden">
+          <label className="relative border border-dashed border-[#CDD2CF] bg-[#F7F8F7] hover:bg-[#F1F3F2] rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group min-h-[260px] overflow-hidden">
             <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
             {imagePreview ? (
-              <Image
-                src={imagePreview}
-                alt="ตัวอย่างรูปสารเคมี"
-                fill
-                unoptimized
-                className="object-contain rounded-lg p-2"
-              />
+              <div className="relative w-full h-56 rounded-md overflow-hidden">
+                <Image
+                  src={imagePreview}
+                  alt="ตัวอย่างรูปสารเคมี"
+                  fill
+                  unoptimized
+                  className="object-contain"
+                />
+              </div>
             ) : (
               <>
-                <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                  <Upload className="w-6 h-6" />
+                <div className="w-10 h-10 rounded-full bg-[#F0F7F2] text-[#2D7048] border border-[#B9DBC6] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                  <Upload size={18} />
                 </div>
-                <p className="text-sm font-semibold text-gray-700 mb-1">
-                  คลิกเพื่ออัปโหลด หรือลากไฟล์มาวาง
+                <p className="text-xs font-semibold text-[#1A1F1C] mb-1">
+                  คลิกเพื่อเลือกไฟล์รูปภาพ
                 </p>
-                <p className="text-xs text-gray-400">
-                  SVG, PNG, JPG or GIF (max. 800×400px)
+                <p className="text-[11px] text-[#5A635D]">
+                  PNG, JPG, WEBP (สูงสุด 10MB)
                 </p>
               </>
             )}
           </label>
+
+          {imagePreview && (
+            <button
+              type="button"
+              onClick={() => {
+                setImageFile(null);
+                setImagePreview(null);
+              }}
+              className="w-full text-center text-xs font-medium text-[#B42318] hover:underline cursor-pointer"
+            >
+              ลบรูปภาพที่เลือก
+            </button>
+          )}
         </div>
 
-        {/* Right Column: Form Details */}
-        <div className="md:col-span-7 flex flex-col justify-between space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <h2 className="text-base font-bold text-gray-900">รายละเอียดสารเคมี</h2>
-            <p className="text-xs text-gray-500 mt-1 mb-6">ข้อมูลสารเคมีกำจัดศัตรูพืชขั้นพื้นฐาน</p>
+        {/* Right Column: Chemical Form */}
+        <div className="md:col-span-7 bg-white border border-[#E3E6E4] rounded-lg p-6">
+          <div className="mb-6">
+            <h1 className="text-lg font-bold tracking-tight text-[#1A1F1C]">
+              ข้อมูลทะเบียนสารเคมีเกษตร
+            </h1>
+            <p className="text-xs text-[#5A635D] mt-1">
+              กรอกข้อมูลสูตร สารออกฤทธิ์ และอัตราการใช้ตามคำแนะนำ
+            </p>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Chemical Name */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  ชื่อสารเคมี <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.chemicalName}
-                  onChange={(e) => setFormData({ ...formData, chemicalName: e.target.value })}
-                  placeholder="Imidacloprid 200SL"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-gray-400"
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
 
-              {/* Active Ingredient */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  ส่วนประกอบสำคัญ <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.activeIngredient}
-                  onChange={(e) => setFormData({ ...formData, activeIngredient: e.target.value })}
-                  placeholder="Imidacloprid"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-gray-400"
-                />
-              </div>
+            {/* Chemical Name */}
+            <div>
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                ชื่อสารเคมี <span className="text-[#B42318]">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.chemicalName}
+                onChange={(e) => setFormData({ ...formData, chemicalName: e.target.value })}
+                placeholder="เช่น อิมิดาโคลพริด (Imidacloprid 20% SL)"
+                className="w-full px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
+              />
+            </div>
 
-              {/* Toxicity Level */}
+            {/* Active Ingredient */}
+            <div>
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                ส่วนประกอบสำคัญ (Active Ingredient) <span className="text-[#B42318]">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.activeIngredient}
+                onChange={(e) => setFormData({ ...formData, activeIngredient: e.target.value })}
+                placeholder="เช่น Imidacloprid"
+                className="w-full px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs italic text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
+              />
+            </div>
+
+            {/* Toxicity Level & Usage Method */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  ระดับความเป็นพิษ <span className="text-red-500">*</span>
+                <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                  ระดับความเป็นพิษ <span className="text-[#B42318]">*</span>
                 </label>
                 <select
                   value={formData.toxicityLevel}
                   onChange={(e) => setFormData({ ...formData, toxicityLevel: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 bg-white transition-shadow"
+                  className="w-full px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] cursor-pointer"
                 >
                   <option value="">เลือกระดับ...</option>
-                  <option value="low">ต่ำ</option>
-                  <option value="medium">กลาง</option>
-                  <option value="high">สูง</option>
+                  <option value="low">ระดับต่ำ (ปลอดภัย)</option>
+                  <option value="medium">ปานกลาง</option>
+                  <option value="high">ระดับสูง (อันตราย)</option>
                 </select>
               </div>
 
-              {/* Dosage */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  อัตราปริมาณยา <span className="text-red-500">*</span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.dosageRate}
-                    onChange={(e) => setFormData({ ...formData, dosageRate: e.target.value })}
-                    placeholder="20"
-                    className="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-gray-400"
-                  />
-                  <select
-                    value={formData.dosageUnit}
-                    onChange={(e) => setFormData({ ...formData, dosageUnit: e.target.value })}
-                    className="w-40 shrink-0 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 bg-white transition-shadow"
-                  >
-                    <option value="">หน่วย...</option>
-                    <option value="ml/rai">มิลลิลิตร/ไร่</option>
-                    <option value="L/rai">ลิตร/ไร่</option>
-                    <option value="g/rai">กรัม/ไร่</option>
-                    <option value="kg/rai">กิโลกรัม/ไร่</option>
-                    <option value="ml/20L">มิลลิลิตร/น้ำ 20 ลิตร</option>
-                    <option value="g/20L">กรัม/น้ำ 20 ลิตร</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Usage Method */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  วิธีการใช้งาน <span className="text-red-500">*</span>
+                <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                  วิธีการใช้งาน <span className="text-[#B42318]">*</span>
                 </label>
                 <select
                   value={formData.usageMethod}
                   onChange={(e) => setFormData({ ...formData, usageMethod: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 bg-white transition-shadow"
+                  className="w-full px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] cursor-pointer"
                 >
                   <option value="">เลือกวิธีการใช้งาน...</option>
                   <option value="foliar_spray">พ่นทางใบ</option>
                   <option value="broadcast">หว่าน/โรยเม็ด</option>
                 </select>
               </div>
+            </div>
 
-              {/* Properties */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  คุณสมบัติ <span className="text-red-500">*</span>
-                </label>
+            {/* Dosage & Unit */}
+            <div>
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                อัตราปริมาณการใช้ <span className="text-[#B42318]">*</span>
+              </label>
+              <div className="flex gap-2">
                 <input
-                  type="text"
-                  value={formData.property}
-                  onChange={(e) => setFormData({ ...formData, property: e.target.value })}
-                  placeholder="Bayer CropScience"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-gray-400"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.dosageRate}
+                  onChange={(e) => setFormData({ ...formData, dosageRate: e.target.value })}
+                  placeholder="เช่น 20"
+                  className="flex-1 px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs font-semibold text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
                 />
+                <select
+                  value={formData.dosageUnit}
+                  onChange={(e) => setFormData({ ...formData, dosageUnit: e.target.value })}
+                  className="w-48 px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] cursor-pointer"
+                >
+                  <option value="">เลือกหน่วย...</option>
+                  <option value="ml/rai">มิลลิลิตร/ไร่</option>
+                  <option value="L/rai">ลิตร/ไร่</option>
+                  <option value="g/rai">กรัม/ไร่</option>
+                  <option value="kg/rai">กิโลกรัม/ไร่</option>
+                  <option value="ml/20L">มิลลิลิตร/น้ำ 20 ลิตร</option>
+                  <option value="g/20L">กรัม/น้ำ 20 ลิตร</option>
+                </select>
               </div>
+            </div>
 
-              {/* Target Pests (autocomplete) */}
-              <div ref={wrapperRef}>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  แมลงเป้าหมาย <span className="text-red-500">*</span>
-                </label>
+            {/* Properties */}
+            <div>
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                คุณสมบัติและกลไกการออกฤทธิ์ <span className="text-[#B42318]">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.property}
+                onChange={(e) => setFormData({ ...formData, property: e.target.value })}
+                placeholder="เช่น ดูดซึมผ่านทางใบและราก ยับยั้งระบบประสาทของแมลง"
+                className="w-full px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
+              />
+            </div>
 
-                {insectsError && (
-                  <p className="text-xs text-red-500 mb-1">{insectsError}</p>
-                )}
+            {/* Target Pests */}
+            <div ref={wrapperRef} className="pt-3 border-t border-[#E3E6E4]">
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                แมลงศัตรูพืชเป้าหมาย <span className="text-[#B42318]">*</span>
+              </label>
 
-                <div className="relative">
-                  <div className="w-full p-2 border border-gray-200 rounded-lg flex flex-wrap gap-2 focus-within:border-gray-400 transition-colors min-h-[42px]">
-                    {targetInsects.map((insect) => (
-                      <span
+              {insectsError && (
+                <p className="text-xs text-[#B42318] mb-1">{insectsError}</p>
+              )}
+
+              <div className="relative">
+                <div className="w-full p-2 bg-white border border-[#CDD2CF] rounded-md flex flex-wrap gap-1.5 focus-within:border-[#2D7048] focus-within:ring-2 focus-within:ring-[#B9DBC6] min-h-[42px] items-center">
+                  {targetInsects.map((insect) => (
+                    <span
+                      key={insect.insectID}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#F0F7F2] text-[#2D7048] border border-[#B9DBC6] rounded-sm text-xs font-medium"
+                    >
+                      {insect.insectName}
+                      <button
+                        type="button"
+                        onClick={() => removeInsect(insect.insectID)}
+                        className="hover:text-[#B42318] transition-colors cursor-pointer"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    value={pestInput}
+                    onChange={handlePestInputChange}
+                    onFocus={() => pestInput.trim().length > 0 && setIsDropdownOpen(true)}
+                    disabled={insectsLoading}
+                    placeholder={insectsLoading ? 'กำลังโหลดรายชื่อแมลง...' : 'พิมพ์ชื่อแมลงเพื่อค้นหา...'}
+                    className="flex-1 min-w-[120px] bg-transparent outline-none text-xs text-[#1A1F1C] placeholder-[#9AA29D] disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                {isDropdownOpen && suggestions.length > 0 && (
+                  <ul className="absolute z-10 w-full mt-1 bg-white border border-[#E3E6E4] rounded-md shadow-lg max-h-52 overflow-y-auto">
+                    {suggestions.map((insect) => (
+                      <li
                         key={insect.insectID}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-[#F0FDF4] text-[#166534] text-xs font-semibold rounded-full"
+                        onClick={() => handleSelectInsect(insect)}
+                        className="px-3.5 py-2 hover:bg-[#F7F8F7] cursor-pointer border-b border-[#E3E6E4] last:border-0 text-xs font-medium text-[#1A1F1C]"
                       >
                         {insect.insectName}
-                        <button
-                          type="button"
-                          onClick={() => removeInsect(insect.insectID)}
-                          className="hover:bg-green-200 rounded p-0.5 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
+                      </li>
                     ))}
-                    <input
-                      type="text"
-                      value={pestInput}
-                      onChange={handlePestInputChange}
-                      onFocus={() => pestInput.trim().length > 0 && setIsDropdownOpen(true)}
-                      disabled={insectsLoading}
-                      placeholder={insectsLoading ? 'กำลังโหลดรายชื่อแมลง...' : 'พิมพ์เพื่อค้นหาศัตรูพืช...'}
-                      className="flex-1 min-w-[120px] bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400 disabled:cursor-not-allowed"
-                    />
+                  </ul>
+                )}
+
+                {isDropdownOpen && suggestions.length === 0 && pestInput.trim().length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-[#E3E6E4] rounded-md shadow-lg px-3.5 py-2 text-xs text-[#5A635D] text-center font-medium">
+                    ไม่พบรายชื่อแมลงที่ค้นหา
                   </div>
-
-                  {isDropdownOpen && suggestions.length > 0 && (
-                    <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto overflow-x-hidden">
-                      {suggestions.map((insect) => (
-                        <li
-                          key={insect.insectID}
-                          onClick={() => handleSelectInsect(insect)}
-                          className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 transition-colors text-sm font-semibold text-gray-900"
-                        >
-                          {insect.insectName}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {isDropdownOpen && suggestions.length === 0 && pestInput.trim().length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3 text-sm text-gray-500 text-center">
-                      ไม่พบรายชื่อแมลงที่คุณค้นหา
-                    </div>
-                  )}
-                </div>
-                <p className="text-[10px] text-gray-500 mt-1">เลือกแมลงทุกชนิดที่สารเคมีนี้กำจัดได้</p>
+                )}
               </div>
+            </div>
 
-              {/* Description */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  คำแนะนำสำหรับการใช้งาน <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  rows={4}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="ระบุข้อควรระวังด้านความปลอดภัย วิธีการผสม และวิธีการใช้งานที่นี่..."
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-gray-400 resize-none"
-                />
+            {/* Description / Instructions */}
+            <div className="pt-3 border-t border-[#E3E6E4]">
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                คำแนะนำสำหรับการใช้งานและอัตราผสม <span className="text-[#B42318]">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="ระบุวิธีการผสม คำแนะนำการฉีดพ่น ช่วงเวลาที่เหมาะสม..."
+                className="w-full px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] resize-none"
+              />
+            </div>
+
+            {/* Warning */}
+            <div>
+              <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
+                คำเตือนและข้อควรระวังความปลอดภัย <span className="text-[#B42318]">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={formData.warning}
+                onChange={(e) => setFormData({ ...formData, warning: e.target.value })}
+                placeholder="ระบุข้อควรระวัง อุปกรณ์ป้องกันส่วนบุคคล ระยะเว้นการเก็บเกี่ยว (PHI)..."
+                className="w-full px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] resize-none"
+              />
+            </div>
+
+            {/* Status Feedback */}
+            {status.state === 'success' && (
+              <div className="flex items-center gap-2 text-xs font-medium text-[#1E7B45] bg-[#E8F5EC] border border-[#B7DFC6] rounded-md p-3">
+                <CheckCircle2 size={16} className="shrink-0 text-[#1E7B45]" />
+                <span>{status.message}</span>
               </div>
-
-              {/* Warning */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  คำเตือน <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  rows={4}
-                  value={formData.warning}
-                  onChange={(e) => setFormData({ ...formData, warning: e.target.value })}
-                  placeholder="ระบุคำเตือนเกี่ยวกับการใช้สารเคมี..."
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-gray-400 resize-none"
-                />
+            )}
+            {status.state === 'error' && (
+              <div className="flex items-center gap-2 text-xs font-medium text-[#B42318] bg-[#FDECEA] border border-[#F4B9B3] rounded-md p-3">
+                <AlertCircle size={16} className="shrink-0 text-[#B42318]" />
+                <span>{status.message}</span>
               </div>
+            )}
 
-              {/* Status message */}
-              {status.state === 'success' && (
-                <div className="flex items-center gap-2 text-xs font-bold text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>{status.message}</span>
-                </div>
-              )}
-              {status.state === 'error' && (
-                <div className="flex items-center gap-2 text-xs font-bold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{status.message}</span>
-                </div>
-              )}
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#E3E6E4]">
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={isSubmitting}
+                className="h-9 px-4 text-xs font-medium text-[#1A1F1C] bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] rounded-md transition-colors cursor-pointer"
+              >
+                ล้างฟอร์ม
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitDisabled}
+                className="h-9 px-4 text-xs font-medium text-white bg-[#2D7048] hover:bg-[#25593A] rounded-md flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                <span>{isSubmitting ? 'กำลังบันทึก...' : 'บันทึกข้อมูลสารเคมี'}</span>
+              </button>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => router.back()}
-                  disabled={isSubmitting}
-                  className="px-6 py-2 text-xs font-semibold text-gray-800 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitDisabled}
-                  className="px-6 py-2.5 text-xs font-bold text-gray-800 bg-[#CBD5E1] hover:bg-[#94A3B8] border border-transparent rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-60"
-                >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {isSubmitting ? 'กำลังบันทึก...' : 'บันทึกลงฐานข้อมูล'}
-                </button>
-              </div>
-            </form>
-          </div>
+          </form>
         </div>
 
       </div>

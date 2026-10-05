@@ -1,23 +1,16 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
-  FlaskConical,
-  Droplets,
-  Bug,
-  ArrowLeft,
+  ChevronLeft,
   Calculator,
   AlertTriangle,
   Loader2,
-  MapPin,
   Clock,
-  Beaker,
-} from "lucide-react";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+  ArrowRight,
+} from 'lucide-react';
 
 interface CalculationResultDTO {
   calculationID: string;
@@ -38,18 +31,14 @@ interface CalculationResultDTO {
 }
 
 const USAGE_LABEL: Record<string, string> = {
-  foliar_spray: "พ่นทางใบ",
-  broadcast: "หว่าน/โรยเม็ด",
+  foliar_spray: 'พ่นทางใบ',
+  broadcast: 'หว่าน/โรยเม็ด',
 };
 
 const USAGE_DESCRIPTION: Record<string, string> = {
-  foliar_spray: "ผสมสารเคมีกับน้ำตามปริมาณที่กำหนด แล้วพ่นให้ทั่วใบข้าว",
-  broadcast: "หว่านหรือโรยเม็ดสารเคมีให้ทั่วแปลงนา",
+  foliar_spray: 'ผสมสารเคมีกับน้ำตามสัดส่วนที่ระบุ แล้วฉีดพ่นให้ทั่วแปลงนาข้าว',
+  broadcast: 'หว่านหรือโรยเม็ดสารเคมีลงในแปลงนาให้กระจายสม่ำเสมอ',
 };
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 
 export default function CalculationResultPage() {
   const router = useRouter();
@@ -59,7 +48,7 @@ export default function CalculationResultPage() {
   useEffect(() => {
     Promise.resolve().then(() => {
       try {
-        const stored = sessionStorage.getItem("calculation_results");
+        const stored = sessionStorage.getItem('calculation_results');
         if (stored) {
           const parsed: CalculationResultDTO[] = JSON.parse(stored);
           setResults(parsed);
@@ -71,28 +60,28 @@ export default function CalculationResultPage() {
     });
   }, []);
 
-  // Loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F3F5F1] flex items-center justify-center gap-2 text-gray-400 text-sm">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        กำลังโหลดผลการคำนวณ...
+      <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D] font-sans">
+        <Loader2 className="w-6 h-6 animate-spin text-[#2D7048]" />
+        <span>กำลังประมวลผลสรุปปริมาณสารเคมี...</span>
       </div>
     );
   }
 
-  // ไม่มีข้อมูล (เข้ามาตรง ไม่ได้กดคำนวณ)
   if (!results || results.length === 0) {
     return (
-      <div className="min-h-screen bg-[#F3F5F1] flex flex-col items-center justify-center gap-4 px-6">
-        <FlaskConical className="w-12 h-12 text-gray-300" />
-        <p className="text-sm text-gray-500 text-center">ไม่พบผลการคำนวณ กรุณาทำการคำนวณก่อน</p>
+      <div className="max-w-md mx-auto my-16 p-8 bg-white border border-[#E3E6E4] rounded-lg text-center flex flex-col items-center gap-3 font-sans">
+        <h3 className="text-base font-bold text-[#1A1F1C]">ไม่พบข้อมูลผลการคำนวณ</h3>
+        <p className="text-sm text-[#5A635D]">
+          กรุณาระบุชนิดศัตรูพืชและขนาดพื้นที่ในแบบฟอร์มคำนวณก่อน
+        </p>
         <button
-          onClick={() => router.push("/member/calculation")}
-          className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+          onClick={() => router.push('/member/calculation')}
+          className="mt-2 inline-flex items-center gap-1.5 h-10 px-4 text-sm font-medium text-white bg-[#2D7048] rounded-md hover:bg-[#25593A] transition-colors cursor-pointer"
         >
           <Calculator size={16} />
-          ไปหน้าคำนวณ
+          <span>ไปที่เครื่องมือคำนวณ</span>
         </button>
       </div>
     );
@@ -100,141 +89,146 @@ export default function CalculationResultPage() {
 
   const first = results[0];
   const calcDate = new Date(first.calculateDate);
-  const dateStr = calcDate.toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+  const dateStr = calcDate.toLocaleDateString('th-TH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
   });
-  const timeStr = calcDate.toLocaleTimeString("th-TH", {
-    hour: "2-digit",
-    minute: "2-digit",
+  const timeStr = calcDate.toLocaleTimeString('th-TH', {
+    hour: '2-digit',
+    minute: '2-digit',
   });
 
   return (
-    <div className="min-h-screen bg-[#F3F5F1] p-4 sm:p-6 md:p-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
+      <div className="max-w-4xl mx-auto px-6 pt-8">
 
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        {/* Breadcrumb & Navigation */}
+        <div className="flex items-center justify-between pb-6 mb-6 border-b border-[#E3E6E4]">
+          <div className="flex items-center gap-2 text-sm text-[#5A635D]">
+            <Link href="/member/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
+            <span>/</span>
+            <Link href="/member/calculation" className="hover:text-[#1A1F1C] transition-colors">คำนวณสารเคมี</Link>
+            <span>/</span>
+            <span className="text-[#1A1F1C] font-semibold">ผลการคำนวณ</span>
+          </div>
+
           <button
-            onClick={() => router.push("/member/calculation")}
-            className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-gray-800 hover:border-gray-300 transition-colors"
+            onClick={() => router.push('/member/calculation')}
+            className="inline-flex items-center gap-1 text-sm text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
           >
-            <ArrowLeft size={18} />
+            <ChevronLeft size={16} />
+            <span>คำนวณใหม่</span>
           </button>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">ผลการคำนวณสารเคมี</h1>
-            <p className="text-xs text-gray-400 mt-0.5">คำนวณเสร็จสิ้น</p>
-          </div>
         </div>
 
-        {/* Summary Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 sm:p-6 mb-4">
-          <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm">
-            <div className="flex items-center gap-2 text-gray-600">
-              <Bug size={15} className="text-green-600" />
-              <span>แมลงเป้าหมาย: <strong className="text-gray-900">{first.insect.insectName}</strong></span>
+        {/* Summary Matrix Strip */}
+        <div className="bg-white border border-[#E3E6E4] rounded-lg p-5 mb-6">
+          <div className="flex items-center justify-between text-xs text-[#5A635D] mb-3 pb-3 border-b border-[#E3E6E4]">
+            <div className="flex items-center gap-1.5">
+              <Clock size={13} className="text-[#9AA29D]" />
+              <span>คำนวณเมื่อ: {dateStr} เวลา {timeStr} น.</span>
             </div>
-            <div className="flex items-center gap-2 text-gray-600">
-              <MapPin size={15} className="text-green-600" />
-              <span>พื้นที่: <strong className="text-gray-900">{first.areaSize} {first.areaUnit}</strong></span>
+            <span className="text-xs text-[#2D7048] font-medium">สรุปคำแนะนำการใช้งาน</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-3 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md">
+              <div className="text-xs text-[#5A635D]">แมลงเป้าหมาย</div>
+              <div className="text-base font-bold text-[#1A1F1C] mt-0.5">{first.insect.insectName}</div>
             </div>
-            {first.waterPerRai != null && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <Droplets size={15} className="text-blue-500" />
-                <span>น้ำ: <strong className="text-gray-900">{first.waterPerRai} ลิตร/ไร่</strong></span>
+
+            <div className="p-3 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md">
+              <div className="text-xs text-[#5A635D]">ขนาดพื้นที่ระบาด</div>
+              <div className="text-base font-bold text-[#1A1F1C] mt-0.5">{first.areaSize} {first.areaUnit}</div>
+            </div>
+
+            <div className="p-3 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md">
+              <div className="text-xs text-[#5A635D]">ปริมาณน้ำที่ใช้ผสม</div>
+              <div className="text-base font-bold text-[#1A1F1C] mt-0.5">
+                {first.waterPerRai != null ? `${first.waterPerRai} ลิตร/ไร่` : 'ตามฉลากแนะนำ'}
               </div>
-            )}
-            <div className="flex items-center gap-2 text-gray-600">
-              <Clock size={15} className="text-gray-400" />
-              <span className="text-xs text-gray-400">{dateStr} · {timeStr}</span>
             </div>
           </div>
         </div>
 
-        {/* Result heading */}
-        <div className="flex items-center gap-2 mb-3 px-1">
-          <FlaskConical size={16} className="text-green-600" />
-          <h2 className="text-sm font-bold text-gray-900">
-            สารเคมีที่แนะนำ ({results.length} ชนิด)
+        {/* Recommended Formulations Heading */}
+        <div className="mb-4">
+          <h2 className="text-base font-bold text-[#1A1F1C]">
+            สูตรสารเคมีที่แนะนำสำหรับกำจัด ({results.length} รายการ)
           </h2>
         </div>
 
-        {/* Chemical result cards */}
-        <div className="space-y-3">
+        {/* Chemical Cards */}
+        <div className="space-y-4 mb-8">
           {results.map((r) => (
             <div
-              key={r.calculationID}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+              key={r.calculationID || r.chemical.chemicalID}
+              className="bg-white border border-[#E3E6E4] rounded-lg overflow-hidden"
             >
-              {/* Card header — chemical name + amount */}
-              <div className="px-5 py-4 sm:px-6 flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-gray-900 truncate">
-                    {r.chemical.chemicalName}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                      <Beaker size={11} />
+              <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-flex items-center text-xs px-2.5 py-0.5 rounded-sm bg-[#F1F3F2] text-[#3F4742] border border-[#E3E6E4] font-medium">
                       {USAGE_LABEL[r.chemical.usageMethod] ?? r.chemical.usageMethod}
                     </span>
-                    <span className="text-xs text-gray-400">
-                      อัตรา: {r.chemical.dosageRate} {r.chemical.dosageUnit}
-                    </span>
                   </div>
+
+                  <h3 className="text-base font-bold text-[#1A1F1C]">
+                    {r.chemical.chemicalName}
+                  </h3>
+                  <p className="text-xs text-[#5A635D] mt-0.5">
+                    อัตราใช้มาตรฐาน: {r.chemical.dosageRate} {r.chemical.dosageUnit}
+                  </p>
                 </div>
 
-                {/* Big amount */}
-                <div className="text-right shrink-0">
-                  <p className="text-2xl sm:text-3xl font-black text-green-700 leading-none">
+                {/* Calculated Dosage */}
+                <div className="bg-[#F0F7F2] border border-[#B9DBC6] rounded-md p-3.5 text-right shrink-0 min-w-36">
+                  <div className="text-xs text-[#5A635D] font-medium">ปริมาณที่ต้องใช้รวม</div>
+                  <div className="text-2xl font-bold text-[#2D7048] leading-tight mt-0.5">
                     {r.calculatedAmount}
-                  </p>
-                  <p className="text-xs font-semibold text-green-600 mt-1">
-                    {r.amountUnit}
-                  </p>
+                  </div>
+                  <div className="text-xs text-[#25593A] font-medium">{r.amountUnit}</div>
                 </div>
               </div>
 
-              {/* Card footer — usage hint */}
-              <div className="px-5 py-3 sm:px-6 bg-green-50 border-t border-green-100">
-                <p className="text-xs text-green-700 leading-relaxed">
-                  💡 {USAGE_DESCRIPTION[r.chemical.usageMethod] ?? "ใช้ตามคำแนะนำของผู้ผลิต"}
-                </p>
-                {r.waterPerRai != null && (
-                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                    <Droplets size={11} />
-                    ใช้น้ำ {r.waterPerRai} ลิตร/ไร่ ในการผสม
-                  </p>
-                )}
+              {/* Hint Strip */}
+              <div className="px-5 py-3 bg-[#F7F8F7] border-t border-[#E3E6E4] text-xs text-[#5A635D] flex items-center justify-between flex-wrap gap-2">
+                <span>{USAGE_DESCRIPTION[r.chemical.usageMethod] ?? 'ปฏิบัติตามคำแนะนำบนฉลาก'}</span>
+                <Link
+                  href={`/member/viewchemical?id=${r.chemical.chemicalID}`}
+                  className="text-[#2D7048] hover:text-[#25593A] font-medium inline-flex items-center gap-1"
+                >
+                  <span>ดูรายละเอียดสารเคมี</span>
+                  <ArrowRight size={13} />
+                </Link>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Warning */}
-        <div className="mt-5 flex gap-3 px-1">
-          <AlertTriangle size={16} className="shrink-0 text-amber-500 mt-0.5" />
-          <p className="text-xs text-gray-500 leading-relaxed">
-            <strong className="text-gray-700">ข้อสงวนสิทธิ์:</strong> ปริมาณที่แสดงเป็นการประมาณการจากอัตราการใช้มาตรฐาน
-            โปรดตรวจสอบกับคำแนะนำของผู้ผลิตสารเคมีและเจ้าหน้าที่ส่งเสริมการเกษตรในพื้นที่ก่อนใช้งานจริง
+        {/* Safety Alert */}
+        <div className="p-4 bg-[#FFF4E0] border border-[#F0D29A] rounded-lg flex items-start gap-3 text-xs text-[#8A5300] mb-8">
+          <AlertTriangle size={18} className="shrink-0 mt-0.5 text-[#8A5300]" />
+          <p className="leading-relaxed">
+            <strong className="font-semibold text-[#8A5300]">คำแนะนำด้านความปลอดภัย:</strong> โปรดสวมใส่อุปกรณ์ป้องกันร่างกาย (PPE) เช่น ถุงมือยางและหน้ากากอนามัยขณะผสมและฉีดพ่น และไม่ควรฉีดพ่นในช่วงที่ลมแรงหรือก่อนฝนตก
           </p>
         </div>
 
-        {/* Bottom actions */}
-        <div className="mt-6 flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={() => router.push("/member/calculation")}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-green-600 text-white text-sm font-semibold py-3 hover:bg-green-700 transition-colors"
+        {/* Action Footer */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E3E6E4]">
+          <Link
+            href="/member/dashboard"
+            className="h-10 px-4 bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] text-sm font-medium rounded-md transition-colors cursor-pointer inline-flex items-center"
           >
-            <Calculator size={16} />
-            คำนวณใหม่
-          </button>
-          <button
-            onClick={() => router.push("/member/dashboard")}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white text-gray-800 text-sm font-semibold py-3 hover:bg-gray-50 transition-colors"
+            กลับแดชบอร์ด
+          </Link>
+          <Link
+            href="/member/calculation"
+            className="h-10 px-5 bg-[#2D7048] hover:bg-[#25593A] text-white text-sm font-medium rounded-md transition-colors cursor-pointer inline-flex items-center"
           >
-            กลับหน้าหลัก
-          </button>
+            คำนวณแปลงใหม่
+          </Link>
         </div>
 
       </div>

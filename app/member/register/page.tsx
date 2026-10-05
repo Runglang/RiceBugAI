@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Mail, MapPin, Lock, Eye, EyeOff, Check, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Check, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
@@ -45,7 +45,7 @@ export default function RegisterPage() {
 
       if (res.status === 409) {
         const data = await res.json();
-        throw new Error(data.error || 'ข้อมูลผู้ใช้ซ้ำกรุณาลองใหม่อีกครั้ง');
+        throw new Error(data.error || 'ข้อมูลผู้ใช้ซ้ำ กรุณาลองใหม่อีกครั้ง');
       }
 
       if (!res.ok) {
@@ -53,11 +53,9 @@ export default function RegisterPage() {
       }
 
       setSuccess(true);
-
-      // รอ 2 วินาทีแล้ว redirect ไปหน้า login
       setTimeout(() => {
         router.push('/member/login');
-      }, 2000);
+      }, 1800);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'สมัครสมาชิกไม่สำเร็จ');
     } finally {
@@ -66,303 +64,179 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F3F5F1] flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-[540px]">
+    <div className="min-h-[90vh] flex items-center justify-center bg-[#F7F8F7] px-4 py-12 font-sans">
+      <div className="bg-white p-8 rounded-lg w-full max-w-md border border-[#E3E6E4]">
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 px-10 py-12">
+        {/* Wordmark & Header */}
+        <div className="text-center mb-6">
+          <Link href="/" className="inline-block text-xl font-bold tracking-tight text-[#1A1F1C] mb-2">
+            RiceBugAI
+          </Link>
+          <h1 className="text-xl font-bold text-[#1A1F1C]">
+            สมัครสมาชิกใหม่
+          </h1>
+          <p className="text-xs text-[#5A635D] mt-1">
+            กรอกข้อมูลเพื่อสร้างบัญชีสำหรับจัดการแปลงนาและคำนวณสารเคมี
+          </p>
+        </div>
 
-          {/* Header Title */}
-          <div className="text-center mb-10">
-            <h1 className="text-[28px] font-bold text-gray-900">
-              Create an Account
-            </h1>
+        {success && (
+          <div className="mb-4 p-3 rounded-md bg-[#E8F5EC] border border-[#B7DFC6] text-xs text-[#1E7B45] text-center font-medium" role="status">
+            สมัครสมาชิกสำเร็จ! กำลังนำคุณไปยังหน้าเข้าสู่ระบบ...
+          </div>
+        )}
 
-            <p className="mt-2 text-[16px] text-gray-400">
-              Please enter your details to register for access.
-            </p>
+        {error && (
+          <div className="mb-4 p-3 rounded-md bg-[#FDECEA] border border-[#F4B9B3] text-xs text-[#B42318] font-medium" role="alert">
+            {error}
+          </div>
+        )}
+
+        <form className="space-y-4" onSubmit={handleSubmit}>
+
+          {/* Username */}
+          <div>
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-[#1A1F1C] mb-1.5"
+            >
+              ชื่อผู้ใช้ <span className="text-xs text-[#5A635D] font-normal">(จำเป็น)</span>
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              disabled={isLoading || success}
+              className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
+              placeholder="ระบุชื่อผู้ใช้"
+            />
           </div>
 
-          {/* Success Message */}
-          {success && (
-            <div className="mb-6 p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-700 text-center">
-              สมัครสมาชิกสำเร็จ! กำลังพาไปหน้าเข้าสู่ระบบ...
-            </div>
-          )}
+          {/* Email */}
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-[#1A1F1C] mb-1.5"
+            >
+              อีเมล <span className="text-xs text-[#5A635D] font-normal">(จำเป็น)</span>
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isLoading || success}
+              className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
+              placeholder="example@domain.com"
+            />
+          </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-600">
-              {error}
-            </div>
-          )}
+          {/* Address / Location */}
+          <div>
+            <label
+              htmlFor="address"
+              className="block text-sm font-medium text-[#1A1F1C] mb-1.5"
+            >
+              ที่อยู่ / ที่ตั้งแปลงเพาะปลูก <span className="text-xs text-[#5A635D] font-normal">(จำเป็น)</span>
+            </label>
+            <input
+              id="address"
+              name="address"
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              required
+              disabled={isLoading || success}
+              className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
+              placeholder="ตำบล อำเภอ จังหวัด"
+            />
+          </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit}>
-
-            {/* Username */}
-            <div className="mb-6">
-              <label
-                htmlFor="username"
-                className="block text-[17px] font-semibold text-gray-800 mb-2"
-              >
-                Username *
-              </label>
-
-              <div className="relative">
-                <User
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                  strokeWidth={2}
-                />
-
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
-                  required
-                  disabled={isLoading || success}
-                  className="
-                    w-full
-                    py-3
-                    rounded-lg
-                    border border-gray-300
-                    bg-white
-                    pl-12 pr-4
-                    text-gray-900
-                    placeholder:text-gray-400
-                    outline-none
-                    transition
-                    focus:border-transparent
-                    focus:ring-2
-                    focus:ring-green-500
-                    disabled:opacity-60
-                  "
-                />
-              </div>
-            </div>
-
-            {/* Email Address */}
-            <div className="mb-6">
-              <label
-                htmlFor="email"
-                className="block text-[17px] font-semibold text-gray-800 mb-2"
-              >
-                Email Address *
-              </label>
-
-              <div className="relative">
-                <Mail
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                  strokeWidth={2}
-                />
-
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email address"
-                  required
-                  disabled={isLoading || success}
-                  className="
-                    w-full
-                    py-3
-                    rounded-lg
-                    border border-gray-300
-                    bg-white
-                    pl-12 pr-4
-                    text-gray-900
-                    placeholder:text-gray-400
-                    outline-none
-                    transition
-                    focus:border-transparent
-                    focus:ring-2
-                    focus:ring-green-500
-                    disabled:opacity-60
-                  "
-                />
-              </div>
-            </div>
-
-            {/* Research Location / Address */}
-            <div className="mb-6">
-              <label
-                htmlFor="address"
-                className="block text-[17px] font-semibold text-gray-800 mb-2"
-              >
-                Research Location / Address *
-              </label>
-
-              <div className="relative">
-                <MapPin
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                  strokeWidth={2}
-                />
-
-                <input
-                  id="address"
-                  name="address"
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Enter your research location"
-                  required
-                  disabled={isLoading || success}
-                  className="
-                    w-full
-                    py-3
-                    rounded-lg
-                    border border-gray-300
-                    bg-white
-                    pl-12 pr-4
-                    text-gray-900
-                    placeholder:text-gray-400
-                    outline-none
-                    transition
-                    focus:border-transparent
-                    focus:ring-2
-                    focus:ring-green-500
-                    disabled:opacity-60
-                  "
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div className="mb-6">
-              <label
-                htmlFor="password"
-                className="block text-[17px] font-semibold text-gray-800 mb-2"
-              >
-                Password *
-              </label>
-
-              <div className="relative">
-                <Lock
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                  strokeWidth={2}
-                />
-
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                  disabled={isLoading || success}
-                  className="
-                    w-full
-                    py-3
-                    rounded-lg
-                    border border-gray-300
-                    bg-white
-                    pl-12 pr-12
-                    text-gray-900
-                    placeholder:text-gray-400
-                    outline-none
-                    transition
-                    focus:border-transparent
-                    focus:ring-2
-                    focus:ring-green-500
-                    disabled:opacity-60
-                  "
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-
-              <p className="mt-1.5 text-xs text-gray-400">
-                ต้องมีอย่างน้อย 8 ตัวอักษร
-              </p>
-            </div>
-
-            {/* Terms Checkbox */}
-            <div className="mb-8">
+          {/* Password */}
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-[#1A1F1C] mb-1.5"
+            >
+              รหัสผ่าน <span className="text-xs text-[#5A635D] font-normal">(อย่างน้อย 8 ตัวอักษร)</span>
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading || success}
+                className="w-full h-10 pl-3 pr-10 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
+                placeholder="กรอกรหัสผ่าน"
+              />
               <button
                 type="button"
-                onClick={() => setAcceptedTerms(!acceptedTerms)}
-                className="flex items-start gap-2.5 text-left cursor-pointer group"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9AA29D] hover:text-[#1A1F1C] cursor-pointer"
+                aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
               >
-                <div
-                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                    acceptedTerms
-                      ? 'bg-green-500 border-green-500'
-                      : 'border-gray-300 group-hover:border-gray-400'
-                  }`}
-                >
-                  {acceptedTerms && <Check className="w-3.5 h-3.5 text-white" />}
-                </div>
-
-                <span className="text-sm text-gray-500 leading-relaxed">
-                  ฉันยอมรับข้อกำหนดในการให้บริการและนโยบายความเป็นส่วนตัว
-                </span>
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading || success}
-              className="
-                w-full
-                py-3
-                rounded-lg
-                bg-green-500
-                hover:bg-green-600
-                text-white
-                font-semibold
-                shadow-[0_0_20px_rgba(34,197,94,0.4)]
-                text-[17px]
-                transition
-                disabled:opacity-60
-                disabled:cursor-not-allowed
-                flex items-center justify-center gap-2
-              "
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  กำลังสมัครสมาชิก...
-                </>
-              ) : (
-                'ลงทะเบียนบัญชี'
-              )}
-            </button>
-
-          </form>
-
-          {/* Footer Link to Login */}
-          <div className="text-center pt-4">
-            <span className="text-sm text-gray-500">
-              มีบัญชีอยู่แล้วใช่ไหม?{' '}
-            </span>
-
-            <Link
-              href="/member/login"
-              className="text-sm font-semibold text-green-600 hover:text-green-700 transition"
-            >
-              เข้าสู่ระบบ
-            </Link>
           </div>
+
+          {/* Terms Checkbox */}
+          <button
+            type="button"
+            onClick={() => setAcceptedTerms(!acceptedTerms)}
+            className="flex items-start gap-2.5 text-left cursor-pointer group pt-1"
+          >
+            <div
+              className={`w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                acceptedTerms
+                  ? 'bg-[#2D7048] border-[#2D7048]'
+                  : 'border-[#CDD2CF] group-hover:border-[#9AA29D] bg-white'
+              }`}
+            >
+              {acceptedTerms && <Check className="w-3 h-3 text-white" />}
+            </div>
+            <span className="text-xs text-[#5A635D] leading-relaxed">
+              ฉันยอมรับข้อกำหนดในการให้บริการและนโยบายความเป็นส่วนตัวของระบบ RiceBugAI
+            </span>
+          </button>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={isLoading || success}
+            className="w-full h-10 mt-2 rounded-md bg-[#2D7048] hover:bg-[#25593A] active:bg-[#1E4730] text-white text-sm font-medium transition-colors disabled:bg-[#F1F3F2] disabled:text-[#9AA29D] disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span>กำลังบันทึกข้อมูล...</span>
+              </>
+            ) : (
+              <span>ลงทะเบียนบัญชี</span>
+            )}
+          </button>
+
+        </form>
+
+        <div className="text-center pt-5 mt-5 border-t border-[#E3E6E4] text-xs text-[#5A635D]">
+          <span>มีบัญชีสมาชิกอยู่แล้ว? </span>
+          <Link
+            href="/member/login"
+            className="font-medium text-[#2D7048] hover:underline"
+          >
+            เข้าสู่ระบบ
+          </Link>
         </div>
+
       </div>
-    </main>
+    </div>
   );
 }
