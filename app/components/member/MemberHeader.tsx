@@ -3,14 +3,15 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
-import { LogOut } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 
 const navItems = [
   { label: 'แดชบอร์ด', href: '/member/dashboard' },
+  { label: 'วิเคราะห์แมลง', href: '/member/analysisinsect' },
+  { label: 'คำนวณเคมี', href: '/member/calculation' },
+  { label: 'เพิ่มแปลงนา', href: '/member/addfield' },
   { label: 'ข้อมูลแมลง', href: '/member/listinsects' },
-  { label: 'สารเคมี', href: '/member/listchemicals' },
-  { label: 'แปลงนา', href: '/member/listfields' },
-  { label: 'คำนวณสารเคมี', href: '/member/calculation' },
+  { label: 'ข้อมูลสารเคมี', href: '/member/listchemicals' },
 ];
 
 export default function MemberHeader() {
@@ -47,7 +48,7 @@ export default function MemberHeader() {
               const active = isActive(item.href);
               return (
                 <Link
-                  key={item.href}
+                  key={item.label}
                   href={item.href}
                   className={`px-3 py-1.5 rounded-md text-[14px] font-medium transition-colors ${
                     active
@@ -63,7 +64,19 @@ export default function MemberHeader() {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/member/editprofile"
+            className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
+              isActive('/member/editprofile')
+                ? 'bg-[#F1F3F2] text-[#1A1F1C] font-semibold'
+                : 'text-[#5A635D] hover:text-[#1A1F1C] hover:bg-[#F1F3F2]'
+            }`}
+          >
+            <User size={14} />
+            <span>โปรไฟล์</span>
+          </Link>
+
           <button
             onClick={handleLogout}
             className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5A635D] hover:text-[#B42318] hover:bg-[#FDECEA] px-3 py-1.5 rounded-md transition-colors cursor-pointer"

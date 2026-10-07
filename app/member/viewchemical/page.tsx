@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useCallback } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -58,31 +58,35 @@ function ChemicalDetailContent() {
 
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
-  const fetchChemical = useCallback(async (id: string, signal?: AbortSignal) => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/${id}`, { signal });
-      if (res.status === 404) {
-        setPageState('notFound');
-        return;
-      }
-      if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (HTTP ${res.status})`);
-
-      const data: ChemicalDTO = await res.json();
-      setChemical(data);
-      setPageState('ready');
-    } catch (err) {
-      if (signal?.aborted) return;
-      setLoadErrorMsg(err instanceof Error ? err.message : 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
-      setPageState('loadError');
-    }
-  }, []);
-
   useEffect(() => {
     if (!chemicalId) return;
     const controller = new AbortController();
-    fetchChemical(chemicalId, controller.signal);
+
+    async function loadChemical() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/${chemicalId}`, { signal: controller.signal });
+        if (controller.signal.aborted) return;
+        if (res.status === 404) {
+          setPageState('notFound');
+          return;
+        }
+        if (!res.ok) throw new Error(`โหลดข้อมูลไม่สำเร็จ (HTTP ${res.status})`);
+
+        const data: ChemicalDTO = await res.json();
+        if (controller.signal.aborted) return;
+        setChemical(data);
+        setPageState('ready');
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setLoadErrorMsg(err instanceof Error ? err.message : 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+          setPageState('loadError');
+        }
+      }
+    }
+
+    loadChemical();
     return () => controller.abort();
-  }, [chemicalId, fetchChemical]);
+  }, [chemicalId]);
 
   if (pageState === 'loading') {
     return (
@@ -238,63 +242,85 @@ function ChemicalDetailContent() {
 
           </div>
 
-          {/* Target Insects & Warnings Matrix */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Warnings & Safety Notice */}
+          <div className="bg-[#FFF4E0] border border-[#F0D29A] rounded-lg p-5 flex flex-col justify-between text-[#8A5300]">
+            <div>
+              <div className="flex items-center gap-2 mb-2 font-semibold text-sm">
+                <AlertTriangle size={18} className="text-[#8A5300] shrink-0" />
+                <span>ข้อควรระวังและความปลอดภัย</span>
+              </div>
 
-            {/* Target Insects */}
-            <div className="bg-[#F7F8F7] border border-[#E3E6E4] rounded-lg p-5">
-              <h3 className="text-base font-bold text-[#1A1F1C] mb-3">
+              <p className="text-sm leading-relaxed whitespace-pre-line mt-1">
+                {chemical.warning || 'สวมอุปกรณ์ป้องกันอันตรายส่วนบุคคล (PPE) ทุกครั้งขณะผสมและพ่นสารเคมี และเว้นระยะเก็บเกี่ยวตามคำแนะนำบนฉลาก'}
+              </p>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-[#F0D29A] text-xs">
+              ปฏิบัติตามคำเตือนบนฉลากผลิตภัณฑ์อย่างเคร่งครัด
+            </div>
+          </div>
+
+          {/* Target Insects Section */}
+          <div className="bg-white border border-[#E3E6E4] rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base sm:text-lg font-bold text-[#1A1F1C]">
                 แมลงเป้าหมายในการควบคุมกำจัด
               </h3>
-
-              {!chemical.targetInsects || chemical.targetInsects.length === 0 ? (
-                <div className="text-sm text-[#5A635D]">
-                  ไม่มีการระบุแมลงเป้าหมายเฉพาะ
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {chemical.targetInsects.map((ins) => (
-                    <Link
-                      key={ins.insectID}
-                      href={`/member/viewinsect?id=${ins.insectID}`}
-                      className="flex items-center justify-between p-3 bg-white hover:bg-[#F1F3F2] border border-[#E3E6E4] rounded-md transition-colors group"
-                    >
-                      <div>
-                        <div className="text-sm font-semibold text-[#1A1F1C] group-hover:text-[#2D7048] transition-colors">
-                          {ins.insectName}
-                        </div>
-                        <div className="text-xs italic text-[#5A635D]">
-                          {ins.scientificName || '—'}
-                        </div>
-                      </div>
-                      <span className="text-xs text-[#5A635D] group-hover:text-[#1A1F1C] font-medium inline-flex items-center gap-1">
-                        ดูข้อมูลแมลง
-                        <ArrowRight size={12} />
-                      </span>
-                    </Link>
-                  ))}
-                </div>
+              {chemical.targetInsects && chemical.targetInsects.length > 0 && (
+                <span className="text-xs text-[#5A635D]">
+                  {chemical.targetInsects.length} ชนิด
+                </span>
               )}
             </div>
 
-            {/* Warnings & Safety Notice */}
-            <div className="bg-[#FFF4E0] border border-[#F0D29A] rounded-lg p-5 flex flex-col justify-between text-[#8A5300]">
-              <div>
-                <div className="flex items-center gap-2 mb-2 font-semibold text-sm">
-                  <AlertTriangle size={18} className="text-[#8A5300] shrink-0" />
-                  <span>ข้อควรระวังและความปลอดภัย</span>
-                </div>
-
-                <p className="text-sm leading-relaxed whitespace-pre-line mt-1">
-                  {chemical.warning || 'สวมอุปกรณ์ป้องกันอันตรายส่วนบุคคล (PPE) ทุกครั้งขณะผสมและพ่นสารเคมี และเว้นระยะเก็บเกี่ยวตามคำแนะนำบนฉลาก'}
-                </p>
+            {!chemical.targetInsects || chemical.targetInsects.length === 0 ? (
+              <div className="text-sm text-[#5A635D] py-6 text-center bg-[#F7F8F7] rounded-md border border-[#E3E6E4]">
+                ไม่มีการระบุแมลงเป้าหมายเฉพาะ
               </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {chemical.targetInsects.map((ins) => {
+                  const insectPhoto =
+                    Array.isArray(ins.insectImg) && ins.insectImg.length > 0
+                      ? ins.insectImg[0]
+                      : typeof ins.insectImg === 'string'
+                      ? ins.insectImg
+                      : null;
 
-              <div className="mt-4 pt-3 border-t border-[#F0D29A] text-xs">
-                ปฏิบัติตามคำเตือนบนฉลากผลิตภัณฑ์อย่างเคร่งครัด
+                  return (
+                    <Link
+                      key={ins.insectID}
+                      href={`/member/viewinsect?id=${ins.insectID}`}
+                      className="group relative h-40 sm:h-44 rounded-xl overflow-hidden border border-[#E3E6E4] hover:border-[#2D7048] shadow-xs hover:shadow-md transition-all flex flex-col justify-end p-4 bg-linear-to-br from-[#4A5568] to-[#2D3748]"
+                    >
+                      {/* Background Photo */}
+                      {insectPhoto ? (
+                        <Image
+                          src={insectPhoto}
+                          alt={ins.insectName}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          unoptimized
+                        />
+                      ) : null}
+
+                      {/* Dark Gradient Overlay for readability */}
+                      <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-black/10 group-hover:from-black/95 group-hover:via-black/50 transition-colors" />
+
+                      {/* Bottom Info */}
+                      <div className="relative z-10 space-y-0.5">
+                        <div className="text-base font-bold text-white group-hover:text-[#A7F3D0] transition-colors leading-snug drop-shadow-sm">
+                          {ins.insectName}
+                        </div>
+                        <div className="text-xs text-white/80 italic truncate font-normal">
+                          {ins.scientificName || '—'}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
-            </div>
-
+            )}
           </div>
 
         </div>

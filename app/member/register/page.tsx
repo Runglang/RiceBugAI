@@ -11,6 +11,8 @@ export default function RegisterPage() {
   const router = useRouter();
 
   const [username, setUsername] = useState('');
+  const [firstname, setFirstname] = useState('');
+  const [lastname, setLastname] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
@@ -40,7 +42,14 @@ export default function RegisterPage() {
       const res = await fetch(`${API_URL}/api/v1/members/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, email, address }),
+        body: JSON.stringify({
+          username,
+          firstname: firstname.trim() || null,
+          lastname: lastname.trim() || null,
+          password,
+          email,
+          address,
+        }),
       });
 
       if (res.status === 409) {
@@ -100,7 +109,7 @@ export default function RegisterPage() {
               htmlFor="username"
               className="block text-sm font-medium text-[#1A1F1C] mb-1.5"
             >
-              ชื่อผู้ใช้ <span className="text-xs text-[#5A635D] font-normal">(จำเป็น)</span>
+              ชื่อผู้ใช้ (Username) <span className="text-xs text-[#5A635D] font-normal">(จำเป็น)</span>
             </label>
             <input
               id="username"
@@ -111,8 +120,48 @@ export default function RegisterPage() {
               required
               disabled={isLoading || success}
               className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
-              placeholder="ระบุชื่อผู้ใช้"
+              placeholder="ระบุชื่อผู้ใช้สำหรับเข้าสู่ระบบ"
             />
+          </div>
+
+          {/* First Name & Last Name */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label
+                htmlFor="firstname"
+                className="block text-sm font-medium text-[#1A1F1C] mb-1.5"
+              >
+                ชื่อจริง
+              </label>
+              <input
+                id="firstname"
+                name="firstname"
+                type="text"
+                value={firstname}
+                onChange={(e) => setFirstname(e.target.value)}
+                disabled={isLoading || success}
+                className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
+                placeholder="ชื่อจริง"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="lastname"
+                className="block text-sm font-medium text-[#1A1F1C] mb-1.5"
+              >
+                นามสกุล
+              </label>
+              <input
+                id="lastname"
+                name="lastname"
+                type="text"
+                value={lastname}
+                onChange={(e) => setLastname(e.target.value)}
+                disabled={isLoading || success}
+                className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
+                placeholder="นามสกุล"
+              />
+            </div>
           </div>
 
           {/* Email */}

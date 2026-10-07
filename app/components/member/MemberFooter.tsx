@@ -23,7 +23,7 @@ export default function MemberFooter() {
           <Link href="/member/listchemicals" className="hover:text-[#1A1F1C] hover:underline">
             คลังสารเคมี
           </Link>
-          <Link href="/member/listfields" className="hover:text-[#1A1F1C] hover:underline">
+          <Link href="/member/dashboard" className="hover:text-[#1A1F1C] hover:underline">
             แปลงนา
           </Link>
           <Link href="/member/calculation" className="hover:text-[#1A1F1C] hover:underline">

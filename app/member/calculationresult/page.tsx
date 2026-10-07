@@ -15,6 +15,9 @@ import {
 interface CalculationResultDTO {
   calculationID: string;
   calculateDate: string;
+  areaRai?: number | null;
+  areaNgan?: number | null;
+  areaSqWah?: number | null;
   areaSize: number;
   areaUnit: string;
   calculatedAmount: number;
@@ -140,7 +143,19 @@ export default function CalculationResultPage() {
 
             <div className="p-3 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md">
               <div className="text-xs text-[#5A635D]">ขนาดพื้นที่ระบาด</div>
-              <div className="text-base font-bold text-[#1A1F1C] mt-0.5">{first.areaSize} {first.areaUnit}</div>
+              <div className="text-base font-bold text-[#1A1F1C] mt-0.5">
+                {first.areaRai != null || first.areaNgan != null || first.areaSqWah != null ? (
+                  [
+                    first.areaRai ? `${first.areaRai} ไร่` : '',
+                    first.areaNgan ? `${first.areaNgan} งาน` : '',
+                    first.areaSqWah ? `${first.areaSqWah} ตร.ว.` : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ') || `${first.areaSize} ${first.areaUnit}`
+                ) : (
+                  `${first.areaSize} ${first.areaUnit}`
+                )}
+              </div>
             </div>
 
             <div className="p-3 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md">

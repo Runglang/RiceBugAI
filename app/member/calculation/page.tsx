@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Calculator, AlertTriangle, Loader2, ChevronLeft } from 'lucide-react';
+import { Calculator, Loader2, ChevronLeft } from 'lucide-react';
 import Cookies from 'js-cookie';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -29,12 +29,17 @@ const EMPTY_FORM: FormData = {
   waterPerRai: '',
 };
 
-export default function ChemicalCalculatorPage() {
+function ChemicalCalculatorContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paramInsectID = searchParams.get('insectID');
+  const paramFieldID = searchParams.get('fieldID');
 
   const [memberID, setMemberID] = useState<string | null>(null);
   const [insects, setInsects] = useState<InsectOption[]>([]);
   const [insectsLoading, setInsectsLoading] = useState(true);
+  const [fieldAutoFilled, setFieldAutoFilled] = useState(false);
+  const [fieldError, setFieldError] = useState('');
 
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
@@ -63,7 +68,13 @@ export default function ChemicalCalculatorPage() {
         if (!res.ok) throw new Error('โหลดรายชื่อแมลงไม่สำเร็จ');
         const data: InsectOption[] = await res.json();
         if (controller.signal.aborted) return;
-        setInsects(Array.isArray(data) ? data : []);
+        const insectList = Array.isArray(data) ? data : [];
+        setInsects(insectList);
+
+        // Auto-select insect if insectID is passed via URL
+        if (paramInsectID && insectList.some((ins) => ins.insectID === paramInsectID)) {
+          setForm((prev) => ({ ...prev, insectID: paramInsectID }));
+        }
       } catch {
         if (!controller.signal.aborted) {
           setInsects([]);
@@ -76,8 +87,65 @@ export default function ChemicalCalculatorPage() {
     }
 
     loadInsects();
-    return () => { controller.abort(); };
-  }, []);
+    return () => {
+      controller.abort();
+    };
+  }, [paramInsectID]);
+
+  // Auto-fill area from Field when fieldID is passed via URL
+  useEffect(() => {
+    if (!paramFieldID || !memberID) return;
+
+    const controller = new AbortController();
+
+    async function loadFieldArea() {
+      try {
+        setFieldError('');
+        const res = await fetch(
+          `${API_ORIGIN}/api/v1/members/${memberID}/fields`,
+          { signal: controller.signal }
+        );
+        if (controller.signal.aborted) return;
+
+        if (!res.ok) {
+          setFieldError('ไม่สามารถโหลดข้อมูลแปลงนาได้');
+          return;
+        }
+
+        const fields: Array<{
+          fieldID: string;
+          fieldName: string;
+          areaRai?: number | null;
+          areaNgan?: number | null;
+          areaSqWah?: number | null;
+        }> = await res.json();
+        if (controller.signal.aborted) return;
+
+        const matched = fields.find((f) => f.fieldID === paramFieldID);
+        if (!matched) {
+          setFieldError('ไม่พบข้อมูลแปลงนาที่เลือก');
+          return;
+        }
+
+        setForm((prev) => ({
+          ...prev,
+          areaRai: matched.areaRai != null ? String(matched.areaRai) : '',
+          areaNgan: matched.areaNgan != null ? String(matched.areaNgan) : '',
+          areaSqWah: matched.areaSqWah != null ? String(matched.areaSqWah) : '',
+        }));
+        setFieldAutoFilled(true);
+      } catch {
+        if (!controller.signal.aborted) {
+          setFieldError('เกิดข้อผิดพลาดในการโหลดข้อมูลแปลงนา');
+        }
+      }
+    }
+
+    loadFieldArea();
+    return () => {
+      controller.abort();
+    };
+  }, [paramFieldID, memberID]);
 
   const handleChange = (field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -118,12 +186,12 @@ export default function ChemicalCalculatorPage() {
       const rai = Number(form.areaRai) || 0;
       const ngan = Number(form.areaNgan) || 0;
       const sqwah = Number(form.areaSqWah) || 0;
-      const totalAreaRai = rai + (ngan * 0.25) + (sqwah * 0.0025);
 
       const payload = {
         insectID: form.insectID,
-        areaSize: Number(totalAreaRai.toFixed(4)),
-        areaUnit: 'ไร่',
+        areaRai: Math.floor(rai),
+        areaNgan: Math.floor(ngan),
+        areaSqWah: Math.floor(sqwah),
         waterPerRai: form.waterPerRai.trim() ? Number(form.waterPerRai) : null,
       };
 
@@ -157,11 +225,12 @@ export default function ChemicalCalculatorPage() {
   return (
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-4xl mx-auto px-6 pt-8">
-
         {/* Breadcrumb & Navigation */}
         <div className="flex items-center justify-between pb-6 mb-6 border-b border-[#E3E6E4]">
           <div className="flex items-center gap-2 text-sm text-[#5A635D]">
-            <Link href="/member/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
+            <Link href="/member/dashboard" className="hover:text-[#1A1F1C] transition-colors">
+              แดชบอร์ด
+            </Link>
             <span>/</span>
             <span className="text-[#1A1F1C] font-semibold">คำนวณปริมาณสารเคมี</span>
           </div>
@@ -176,27 +245,31 @@ export default function ChemicalCalculatorPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-
           {/* Sidebar Info */}
           <div className="md:col-span-4 bg-white border border-[#E3E6E4] rounded-lg p-5 space-y-4">
-            <h2 className="text-sm font-bold text-[#1A1F1C]">
-              หลักการคำนวณปริมาณสารเคมี
-            </h2>
+            <h2 className="text-sm font-bold text-[#1A1F1C]">หลักการคำนวณปริมาณสารเคมี</h2>
             <p className="text-xs text-[#5A635D] leading-relaxed">
-              ระบบจะอิงตามอัตราการใช้สารเคมีที่ขึ้นทะเบียนต่อพื้นที่ 1 ไร่ เพื่อป้องกันปัญหาการสะสมสารพิษเกินขนาด หรือการดื้อยาของแมลงศัตรูพืช
+              ระบบจะอิงตามอัตราการใช้สารเคมีที่ขึ้นทะเบียนต่อพื้นที่ 1 ไร่ เพื่อป้องกันปัญหาการสะสมสารพิษเกินขนาด
+              หรือการดื้อยาของแมลงศัตรูพืช
             </p>
 
             <div className="pt-3 border-t border-[#E3E6E4] space-y-2.5 text-xs text-[#3F4742]">
               <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#E8F5EC] text-[#1E7B45] text-[11px] font-bold flex items-center justify-center shrink-0">1</span>
+                <span className="w-5 h-5 rounded-full bg-[#E8F5EC] text-[#1E7B45] text-[11px] font-bold flex items-center justify-center shrink-0">
+                  1
+                </span>
                 <span>ระบุแมลงศัตรูพืชที่ตรวจพบ</span>
               </div>
               <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#E8F5EC] text-[#1E7B45] text-[11px] font-bold flex items-center justify-center shrink-0">2</span>
+                <span className="w-5 h-5 rounded-full bg-[#E8F5EC] text-[#1E7B45] text-[11px] font-bold flex items-center justify-center shrink-0">
+                  2
+                </span>
                 <span>ระบุขนาดพื้นที่ระบาดจริง</span>
               </div>
               <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#E8F5EC] text-[#1E7B45] text-[11px] font-bold flex items-center justify-center shrink-0">3</span>
+                <span className="w-5 h-5 rounded-full bg-[#E8F5EC] text-[#1E7B45] text-[11px] font-bold flex items-center justify-center shrink-0">
+                  3
+                </span>
                 <span>รับสูตรผสมและปริมาณน้ำที่ต้องใช้</span>
               </div>
             </div>
@@ -219,8 +292,19 @@ export default function ChemicalCalculatorPage() {
               </div>
             )}
 
-            <div className="space-y-5">
+            {fieldError && (
+              <div className="mb-6 p-3.5 rounded-md bg-[#FDECEA] border border-[#F4B9B3] text-[#B42318] text-xs">
+                {fieldError}
+              </div>
+            )}
 
+            {fieldAutoFilled && !fieldError && (
+              <div className="mb-6 p-3.5 rounded-md bg-[#E8F5EC] border border-[#B7DFC6] text-[#1E7B45] text-xs">
+                ระบบดึงข้อมูลพื้นที่จากแปลงนาของคุณเรียบร้อยแล้ว
+              </div>
+            )}
+
+            <div className="space-y-5">
               {/* Pest Select */}
               <div>
                 <label className="block text-sm font-medium text-[#1A1F1C] mb-1.5">
@@ -300,7 +384,9 @@ export default function ChemicalCalculatorPage() {
               <div className="pt-2 border-t border-[#E3E6E4]">
                 <label className="block text-sm font-medium text-[#1A1F1C] mb-1">
                   ปริมาณน้ำที่ใช้ต่อไร่ (ลิตร)
-                  <span className="text-[#5A635D] font-normal ml-1 text-xs">— สำหรับสารเคมีชนิดพ่นทางใบ</span>
+                  <span className="text-[#5A635D] font-normal ml-1 text-xs">
+                    — สำหรับสารเคมีชนิดพ่นทางใบ
+                  </span>
                 </label>
                 <input
                   type="number"
@@ -347,21 +433,25 @@ export default function ChemicalCalculatorPage() {
                   ล้างข้อมูล
                 </button>
               </div>
-
             </div>
           </div>
-
         </div>
-
-        {/* Safety Disclaimer */}
-        <div className="mt-8 p-4 bg-[#FFF4E0] border border-[#F0D29A] rounded-lg flex items-start gap-3 text-xs text-[#8A5300]">
-          <AlertTriangle size={18} className="shrink-0 mt-0.5 text-[#8A5300]" />
-          <p className="leading-relaxed">
-            <strong className="font-semibold text-[#8A5300]">คำเตือนทางวิชาการเกษตร:</strong> ผลการคำนวณเป็นการประมาณการเบื้องต้นตามคำแนะนำทางวิชาการ ควรอ่านฉลากผลิตภัณฑ์จริงและปฏิบัติตามข้อกำหนดความปลอดภัยก่อนดำเนินการฉีดพ่น
-          </p>
-        </div>
-
       </div>
     </div>
+  );
+}
+
+export default function ChemicalCalculatorPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F7F8F7] py-24 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D]">
+          <Loader2 className="animate-spin text-[#2D7048]" size={24} />
+          <span>กำลังโหลดเครื่องมือคำนวณ...</span>
+        </div>
+      }
+    >
+      <ChemicalCalculatorContent />
+    </Suspense>
   );
 }
