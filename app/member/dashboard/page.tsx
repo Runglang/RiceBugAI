@@ -10,6 +10,7 @@ import {
   Calculator,
   Sparkles,
   Trash2,
+  Edit2,
   Loader2,
   AlertCircle,
   MapPin,
@@ -356,7 +357,7 @@ export default function MemberDashboard() {
                         </div>
                       </div>
 
-                      {/* Bottom Actions Row (Balanced Twins) */}
+                      {/* Bottom Actions Row */}
                       <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#E1E6E2] flex-wrap">
                         <div className="flex items-center gap-2 flex-wrap">
                           {/* Action 1: วิเคราะห์แมลง */}
@@ -378,18 +379,31 @@ export default function MemberDashboard() {
                           </Link>
                         </div>
 
-                        <button
-                          onClick={() => handleDelete(field.fieldID, field.fieldName)}
-                          disabled={isDeletingId === field.fieldID}
-                          className="h-8.5 px-2.5 rounded-lg bg-white hover:bg-[#FDECEA] border border-[#CBD3CE] hover:border-[#F4B9B3] text-[#65716A] hover:text-[#B42318] transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center shrink-0"
-                          title="ลบแปลงนา"
-                        >
-                          {isDeletingId === field.fieldID ? (
-                            <Loader2 size={13} className="animate-spin text-[#B42318]" />
-                          ) : (
-                            <Trash2 size={13} />
-                          )}
-                        </button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {/* Action 3: แก้ไขแปลงนา */}
+                          <Link
+                            href={`/member/editfield?fieldID=${field.fieldID}`}
+                            className="h-8.5 px-2.5 rounded-lg bg-white hover:bg-[#F1F4F2] border border-[#CBD3CE] hover:border-[#1A1F1C] text-[#4B5750] hover:text-[#111813] transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-medium"
+                            title="แก้ไขข้อมูลแปลงนา"
+                          >
+                            <Edit2 size={13} />
+                            <span>แก้ไข</span>
+                          </Link>
+
+                          {/* Action 4: ลบแปลงนา */}
+                          <button
+                            onClick={() => handleDelete(field.fieldID, field.fieldName)}
+                            disabled={isDeletingId === field.fieldID}
+                            className="h-8.5 px-2.5 rounded-lg bg-white hover:bg-[#FDECEA] border border-[#CBD3CE] hover:border-[#F4B9B3] text-[#65716A] hover:text-[#B42318] transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center shrink-0"
+                            title="ลบแปลงนา"
+                          >
+                            {isDeletingId === field.fieldID ? (
+                              <Loader2 size={13} className="animate-spin text-[#B42318]" />
+                            ) : (
+                              <Trash2 size={13} />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
