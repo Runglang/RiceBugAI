@@ -20,7 +20,7 @@ export default function MemberLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7F8F7] font-sans">
+    <div className="min-h-screen flex flex-col bg-[#F8FAF8] font-sans">
       <MemberHeader />
       <main className="flex-1">
         {children}

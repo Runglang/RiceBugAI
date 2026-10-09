@@ -330,17 +330,9 @@ function AnalysisInsectContent() {
         {/* Breadcrumb / Section Header */}
         <div className="pb-6 mb-8 border-b border-[#E3E6E4] flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs text-[#5A635D] mb-1">
-              <Link href="/member/dashboard" className="hover:text-[#1A1F1C]">แดชบอร์ด</Link>
-              <ChevronRight size={12} />
-              <span className="text-[#1A1F1C] font-medium">วิเคราะห์แมลงศัตรูข้าว</span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
               วิเคราะห์แมลง
             </h1>
-            <p className="text-sm text-[#5A635D] mt-1 max-w-2xl">
-              อัปโหลดภาพใบหรือลำต้นข้าวที่มีความละเอียดสูง โมเดล AI ของเราจะตรวจจับศัตรูพืชและโรคที่อาจเกิดขึ้นได้อย่างแม่นยำ
-            </p>
           </div>
         </div>
 

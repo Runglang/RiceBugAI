@@ -150,26 +150,26 @@ export default function MemberDashboard() {
   const welcomeName = [member?.firstname, member?.lastname].filter(Boolean).join(' ') || member?.username || 'สมาชิก';
 
   return (
-    <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
+    <div className="min-h-screen bg-[#F8FAF8] text-[#2D3730] font-sans pb-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8">
 
         {/* 1. Header / Welcome */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 mb-6 border-b border-[#E3E6E4] gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 mb-6 border-b border-[#E1E6E2] gap-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111813]">
               แดชบอร์ด
             </h1>
-            <p className="text-sm text-[#5A635D] mt-0.5">
-              ยินดีต้อนรับ, <span className="text-[#1A1F1C] font-semibold">{welcomeName}</span> — ภาพรวมแปลงเพาะปลูกและระบบช่วยตัดสินใจ
+            <p className="text-sm text-[#4B5750] mt-0.5">
+              ยินดีต้อนรับ, <span className="text-[#111813] font-semibold">{welcomeName}</span> — ภาพรวมแปลงเพาะปลูกและระบบช่วยตัดสินใจ
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 self-start sm:self-center">
             <Link
               href="/member/editprofile"
-              className="inline-flex items-center gap-1.5 bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] text-xs sm:text-sm font-medium h-9 px-3.5 rounded-md transition-colors shadow-2xs"
+              className="inline-flex items-center gap-1.5 bg-white hover:bg-[#F1F4F2] border border-[#CBD3CE] text-[#111813] text-xs sm:text-sm font-medium h-9 px-3.5 rounded-lg transition-all shadow-2xs"
             >
-              <User size={15} className="text-[#5A635D]" />
+              <User size={15} className="text-[#65716A]" />
               <span>ข้อมูลส่วนตัว</span>
             </Link>
           </div>
@@ -181,18 +181,18 @@ export default function MemberDashboard() {
           {/* Tile 1: แมลงศัตรูพืช */}
           <Link
             href="/member/listinsects"
-            className="group bg-white hover:border-[#B9DBC6] hover:shadow-2xs border border-[#E3E6E4] rounded-lg p-4 transition-all"
+            className="group relative bg-white hover:border-[#B2DEC3] border border-[#E1E6E2] rounded-xl p-4.5 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] overflow-hidden"
           >
-            <div className="text-xs font-medium text-[#5A635D] mb-1">
+            <div className="text-xs font-medium text-[#65716A] mb-1">
               ฐานข้อมูลแมลงศัตรูข้าว
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C] tabular-nums">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111813] tabular-nums">
                 {statsLoading ? '—' : insectCount ?? 0}
               </span>
-              <span className="text-xs text-[#5A635D]">ชนิดในระบบ</span>
+              <span className="text-xs text-[#65716A]">ชนิดในระบบ</span>
             </div>
-            <div className="text-xs text-[#2D7048] mt-2 flex items-center gap-1 font-medium">
+            <div className="text-xs text-[#156E3B] mt-2.5 flex items-center gap-1 font-semibold">
               <span>ดูข้อมูลแมลง</span>
               <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
             </div>
@@ -201,35 +201,35 @@ export default function MemberDashboard() {
           {/* Tile 2: สารเคมีเกษตร */}
           <Link
             href="/member/listchemicals"
-            className="group bg-white hover:border-[#B9DBC6] hover:shadow-2xs border border-[#E3E6E4] rounded-lg p-4 transition-all"
+            className="group relative bg-white hover:border-[#B5D4EE] border border-[#E1E6E2] rounded-xl p-4.5 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] overflow-hidden"
           >
-            <div className="text-xs font-medium text-[#5A635D] mb-1">
+            <div className="text-xs font-medium text-[#65716A] mb-1">
               คลังสารเคมีกำจัดแมลง
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C] tabular-nums">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111813] tabular-nums">
                 {statsLoading ? '—' : chemicalCount ?? 0}
               </span>
-              <span className="text-xs text-[#5A635D]">สูตรสารเคมี</span>
+              <span className="text-xs text-[#65716A]">สูตรสารเคมี</span>
             </div>
-            <div className="text-xs text-[#2D7048] mt-2 flex items-center gap-1 font-medium">
+            <div className="text-xs text-[#1B578A] mt-2.5 flex items-center gap-1 font-semibold">
               <span>ตรวจสอบสารเคมี</span>
               <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
             </div>
           </Link>
 
           {/* Tile 3: แปลงนาที่บันทึกไว้ */}
-          <div className="bg-white border border-[#E3E6E4] rounded-lg p-4">
-            <div className="text-xs font-medium text-[#5A635D] mb-1">
+          <div className="relative bg-white border border-[#E1E6E2] rounded-xl p-4.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] overflow-hidden">
+            <div className="text-xs font-medium text-[#65716A] mb-1">
               แปลงนาที่บันทึกไว้
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C] tabular-nums">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111813] tabular-nums">
                 {fieldsLoading ? '—' : fields.length}
               </span>
-              <span className="text-xs text-[#5A635D]">แปลงที่กำลังดูแล</span>
+              <span className="text-xs text-[#65716A]">แปลงที่กำลังดูแล</span>
             </div>
-            <div className="text-xs text-[#2D7048] mt-2 font-medium">
+            <div className="text-xs text-[#25593A] mt-2.5 font-semibold">
               แสดงในรายการด้านล่าง
             </div>
           </div>
@@ -243,19 +243,19 @@ export default function MemberDashboard() {
           <div className="lg:col-span-7 xl:col-span-8 space-y-4">
 
             {/* Section Header */}
-            <div className="flex items-center justify-between pb-2 border-b border-[#E3E6E4]">
+            <div className="flex items-center justify-between pb-2 border-b border-[#E1E6E2]">
               <div>
-                <h2 className="text-lg font-bold text-[#1A1F1C]">
+                <h2 className="text-lg font-bold text-[#111813]">
                   แปลงนาของคุณ
                 </h2>
-                <p className="text-xs text-[#5A635D] mt-0.5">
+                <p className="text-xs text-[#65716A] mt-0.5">
                   ติดตามอายุข้าว วิเคราะห์แมลงศัตรูพืช และคำนวณยาตามแปลง
                 </p>
               </div>
 
               <Link
                 href="/member/addfield"
-                className="inline-flex items-center gap-1.5 px-3 h-8.5 rounded-md bg-[#2D7048] hover:bg-[#25593A] text-white text-xs font-medium transition-colors shrink-0 shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-3 h-8.5 rounded-lg bg-[#2D7048] hover:bg-[#25593A] text-white text-xs font-semibold transition-all shrink-0 shadow-2xs cursor-pointer"
               >
                 <Plus size={14} />
                 <span>เพิ่มแปลงนา</span>
@@ -264,30 +264,30 @@ export default function MemberDashboard() {
 
             {/* Fields Content */}
             {fieldsLoading ? (
-              <div className="py-14 text-center bg-white border border-[#E3E6E4] rounded-lg flex flex-col items-center justify-center gap-2 text-xs text-[#5A635D]">
+              <div className="py-14 text-center bg-white border border-[#E1E6E2] rounded-xl flex flex-col items-center justify-center gap-2 text-xs text-[#65716A] shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
                 <Loader2 className="animate-spin text-[#2D7048]" size={22} />
                 <span>กำลังโหลดข้อมูลแปลงนา...</span>
               </div>
             ) : fieldsError ? (
-              <div className="py-8 text-center bg-[#FDECEA] border border-[#F4B9B3] rounded-lg p-5 text-xs text-[#B42318] flex flex-col items-center gap-2">
+              <div className="py-8 text-center bg-[#FDECEA] border border-[#F4B9B3] rounded-xl p-5 text-xs text-[#B42318] flex flex-col items-center gap-2">
                 <AlertCircle size={22} />
                 <span>{fieldsError}</span>
                 <button
                   onClick={() => member && fetchFields(member.memberID)}
-                  className="mt-1 px-3 py-1 bg-white border border-[#CDD2CF] text-[#1A1F1C] rounded-md text-xs font-medium hover:bg-[#F1F3F2] transition-colors cursor-pointer"
+                  className="mt-1 px-3 py-1 bg-white border border-[#CBD3CE] text-[#111813] rounded-lg text-xs font-medium hover:bg-[#F1F4F2] transition-colors cursor-pointer"
                 >
                   ลองใหม่อีกครั้ง
                 </button>
               </div>
             ) : fields.length === 0 ? (
-              <div className="py-12 text-center bg-white border border-[#E3E6E4] rounded-lg p-6 flex flex-col items-center">
-                <h3 className="text-sm font-bold text-[#1A1F1C]">ยังไม่มีข้อมูลแปลงนาในระบบ</h3>
-                <p className="text-xs text-[#5A635D] mt-1 max-w-xs">
+              <div className="py-12 text-center bg-white border border-[#E1E6E2] rounded-xl p-6 flex flex-col items-center shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+                <h3 className="text-sm font-bold text-[#111813]">ยังไม่มีข้อมูลแปลงนาในระบบ</h3>
+                <p className="text-xs text-[#65716A] mt-1 max-w-xs">
                   เพิ่มข้อมูลแปลงนาเพื่อเริ่มติดตามอายุข้าว และส่งข้อมูลพื้นที่ไปคำนวณสารเคมีได้ทันที
                 </p>
                 <Link
                   href="/member/addfield"
-                  className="mt-4 inline-flex items-center gap-1.5 px-3.5 h-8.5 rounded-md bg-[#2D7048] hover:bg-[#25593A] text-white text-xs font-medium transition-colors shadow-2xs"
+                  className="mt-4 inline-flex items-center gap-1.5 px-3.5 h-8.5 rounded-lg bg-[#2D7048] hover:bg-[#25593A] text-white text-xs font-semibold transition-all shadow-2xs cursor-pointer"
                 >
                   <Plus size={14} />
                   <span>ลงทะเบียนแปลงแรก</span>
@@ -311,23 +311,23 @@ export default function MemberDashboard() {
                   return (
                     <div
                       key={field.fieldID}
-                      className="bg-white border border-[#E3E6E4] hover:border-[#CDD2CF] rounded-lg p-4 sm:p-4.5 transition-all shadow-2xs flex flex-col gap-3"
+                      className="bg-white border border-[#E1E6E2] hover:border-[#CBD3CE] rounded-xl p-4 sm:p-4.5 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] flex flex-col gap-3"
                     >
                       {/* Top Row: Name + Stage Badge */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-[15px] font-bold text-[#1A1F1C] truncate">
+                            <h3 className="text-[15px] font-bold text-[#111813] truncate">
                               {field.fieldName}
                             </h3>
-                            <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-sm bg-[#E8F5EC] text-[#1E7B45] border border-[#B7DFC6] font-medium shrink-0">
+                            <span className="inline-flex items-center text-[11px] px-2.5 py-0.5 rounded-full bg-[#E8F6ED] text-[#156E3B] border border-[#B2DEC3] font-semibold shrink-0">
                               {field.currentGrowthStage?.stageName || 'ไม่ระบุระยะ'}
                             </span>
                           </div>
 
                           {locationText && (
-                            <div className="flex items-center gap-1 text-xs text-[#5A635D] mt-1">
-                              <MapPin size={12} className="text-[#9AA29D] shrink-0" />
+                            <div className="flex items-center gap-1 text-xs text-[#65716A] mt-1">
+                              <MapPin size={12} className="text-[#939E97] shrink-0" />
                               <span className="truncate">{locationText}</span>
                             </div>
                           )}
@@ -335,52 +335,53 @@ export default function MemberDashboard() {
                       </div>
 
                       {/* Metrics Strip */}
-                      <div className="grid grid-cols-3 gap-2 p-2.5 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md text-xs">
+                      <div className="grid grid-cols-3 gap-2 p-2.5 bg-[#F8FAF8] border border-[#E1E6E2] rounded-lg text-xs">
                         <div>
-                          <div className="text-[11px] text-[#5A635D]">วันที่เริ่มปลูก</div>
-                          <div className="font-semibold text-[#1A1F1C] mt-0.5 truncate">
+                          <div className="text-[11px] text-[#65716A] font-medium">วันที่เริ่มปลูก</div>
+                          <div className="font-semibold text-[#111813] mt-0.5 truncate">
                             {field.plantingDate || '—'}
                           </div>
                         </div>
                         <div>
-                          <div className="text-[11px] text-[#5A635D]">ขนาดพื้นที่</div>
-                          <div className="font-semibold text-[#1A1F1C] mt-0.5 truncate">
+                          <div className="text-[11px] text-[#65716A] font-medium">ขนาดพื้นที่</div>
+                          <div className="font-semibold text-[#111813] mt-0.5 truncate">
                             {areaText}
                           </div>
                         </div>
                         <div>
-                          <div className="text-[11px] text-[#5A635D]">อายุข้าว</div>
-                          <div className="font-bold text-[#2D7048] mt-0.5">
+                          <div className="text-[11px] text-[#65716A] font-medium">อายุข้าว</div>
+                          <div className="font-bold text-[#156E3B] mt-0.5">
                             {field.riceAge} วัน
                           </div>
                         </div>
                       </div>
 
-                      {/* Bottom Actions Row */}
-                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#E3E6E4] flex-wrap">
+                      {/* Bottom Actions Row (Balanced Twins) */}
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#E1E6E2] flex-wrap">
                         <div className="flex items-center gap-2 flex-wrap">
+                          {/* Action 1: วิเคราะห์แมลง */}
                           <Link
                             href={`/member/analysisinsect?fieldID=${field.fieldID}`}
-                            className="px-2.5 h-8 rounded-md bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
+                            className="px-3 h-8.5 rounded-lg bg-[#E8F6ED] hover:bg-[#2D7048] text-[#156E3B] hover:text-white border border-[#B2DEC3] hover:border-[#2D7048] text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs group cursor-pointer"
                           >
-                            <Sparkles size={12} className="text-[#2D7048]" />
+                            <Sparkles size={13} className="text-[#156E3B] group-hover:text-white transition-colors" />
                             <span>วิเคราะห์แมลง</span>
                           </Link>
 
+                          {/* Action 2: คำนวณยา */}
                           <Link
                             href={`/member/calculation?fieldID=${field.fieldID}`}
-                            className="px-3 h-8 rounded-md bg-[#2D7048] hover:bg-[#25593A] text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors shadow-2xs"
+                            className="px-3 h-8.5 rounded-lg bg-[#EAF3FB] hover:bg-[#1B578A] text-[#1B578A] hover:text-white border border-[#B5D4EE] hover:border-[#1B578A] text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs group cursor-pointer"
                           >
-                            <Calculator size={12} />
+                            <Calculator size={13} className="text-[#1B578A] group-hover:text-white transition-colors" />
                             <span>คำนวณยา</span>
-                            <ArrowRight size={11} />
                           </Link>
                         </div>
 
                         <button
                           onClick={() => handleDelete(field.fieldID, field.fieldName)}
                           disabled={isDeletingId === field.fieldID}
-                          className="h-8 px-2.5 rounded-md bg-white hover:bg-[#FDECEA] border border-[#CDD2CF] hover:border-[#F4B9B3] text-[#5A635D] hover:text-[#B42318] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center shrink-0"
+                          className="h-8.5 px-2.5 rounded-lg bg-white hover:bg-[#FDECEA] border border-[#CBD3CE] hover:border-[#F4B9B3] text-[#65716A] hover:text-[#B42318] transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center shrink-0"
                           title="ลบแปลงนา"
                         >
                           {isDeletingId === field.fieldID ? (
@@ -402,11 +403,11 @@ export default function MemberDashboard() {
           <div className="lg:col-span-5 xl:col-span-4 space-y-4">
 
             {/* Section Header */}
-            <div className="pb-2 border-b border-[#E3E6E4]">
-              <h2 className="text-lg font-bold text-[#1A1F1C]">
+            <div className="pb-2 border-b border-[#E1E6E2]">
+              <h2 className="text-lg font-bold text-[#111813]">
                 ระบบงานหลัก
               </h2>
-              <p className="text-xs text-[#5A635D] mt-0.5">
+              <p className="text-xs text-[#65716A] mt-0.5">
                 เครื่องมือช่วยตัดสินใจและจัดการข้อมูล
               </p>
             </div>
@@ -415,22 +416,22 @@ export default function MemberDashboard() {
             <div className="space-y-3">
 
               {/* Item 1: วิเคราะห์แมลงศัตรูข้าว */}
-              <div className="bg-white border border-[#E3E6E4] hover:border-[#B9DBC6] rounded-lg p-4 transition-all shadow-2xs">
+              <div className="bg-white border border-[#E1E6E2] hover:border-[#B2DEC3] rounded-xl p-4 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]">
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-md bg-[#E8F5EC] border border-[#B7DFC6] flex items-center justify-center text-[#2D7048] shrink-0 mt-0.5">
+                  <div className="w-9 h-9 rounded-lg bg-[#E8F6ED] border border-[#B2DEC3] flex items-center justify-center text-[#156E3B] shrink-0 mt-0.5">
                     <Sparkles size={18} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-[#1A1F1C]">
+                    <h3 className="text-sm font-bold text-[#111813]">
                       วิเคราะห์แมลงศัตรูข้าว AI
                     </h3>
-                    <p className="text-xs text-[#5A635D] mt-0.5 leading-relaxed">
+                    <p className="text-xs text-[#65716A] mt-0.5 leading-relaxed">
                       อัปโหลดรูปภาพเพื่อจำแนกชนิดแมลงศัตรูพืชตามระยะข้าว
                     </p>
                     <div className="mt-3">
                       <Link
                         href="/member/analysisinsect"
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2D7048] hover:text-[#25593A] transition-colors"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#156E3B] hover:text-[#25593A] transition-colors"
                       >
                         <span>เริ่มวิเคราะห์</span>
                         <ArrowRight size={12} />
@@ -441,29 +442,29 @@ export default function MemberDashboard() {
               </div>
 
               {/* Item 2: คำนวณปริมาณสารเคมี */}
-              <div className="bg-white border border-[#E3E6E4] hover:border-[#B9DBC6] rounded-lg p-4 transition-all shadow-2xs">
+              <div className="bg-white border border-[#E1E6E2] hover:border-[#B5D4EE] rounded-xl p-4 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]">
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-md bg-[#E8F5EC] border border-[#B7DFC6] flex items-center justify-center text-[#2D7048] shrink-0 mt-0.5">
+                  <div className="w-9 h-9 rounded-lg bg-[#EAF3FB] border border-[#B5D4EE] flex items-center justify-center text-[#1B578A] shrink-0 mt-0.5">
                     <Calculator size={18} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-[#1A1F1C]">
+                    <h3 className="text-sm font-bold text-[#111813]">
                       คำนวณปริมาณสารเคมี
                     </h3>
-                    <p className="text-xs text-[#5A635D] mt-0.5 leading-relaxed">
+                    <p className="text-xs text-[#65716A] mt-0.5 leading-relaxed">
                       คำนวณสูตรและอัตราผสมยาตามขนาดพื้นที่จริง
                     </p>
                     <div className="mt-3 flex items-center gap-4 text-xs font-semibold">
                       <Link
                         href="/member/calculation"
-                        className="inline-flex items-center gap-1 text-[#2D7048] hover:text-[#25593A] transition-colors"
+                        className="inline-flex items-center gap-1 text-[#1B578A] hover:text-[#163423] transition-colors"
                       >
                         <span>เปิดเครื่องมือคำนวณ</span>
                         <ArrowRight size={12} />
                       </Link>
                       <Link
                         href="/member/calculationresult"
-                        className="inline-flex items-center gap-1 text-[#5A635D] hover:text-[#1A1F1C] font-normal transition-colors"
+                        className="inline-flex items-center gap-1 text-[#65716A] hover:text-[#111813] font-medium transition-colors"
                       >
                         <History size={11} />
                         <span>ผลล่าสุด</span>
@@ -474,22 +475,22 @@ export default function MemberDashboard() {
               </div>
 
               {/* Item 3: ข้อมูลส่วนตัว & จัดการระบบ */}
-              <div className="bg-white border border-[#E3E6E4] hover:border-[#B9DBC6] rounded-lg p-4 transition-all shadow-2xs">
+              <div className="bg-white border border-[#E1E6E2] hover:border-[#CBD3CE] rounded-xl p-4 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]">
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-md bg-[#F1F3F2] border border-[#CDD2CF] flex items-center justify-center text-[#3F4742] shrink-0 mt-0.5">
+                  <div className="w-9 h-9 rounded-lg bg-[#F1F4F2] border border-[#CBD3CE] flex items-center justify-center text-[#4B5750] shrink-0 mt-0.5">
                     <User size={18} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-[#1A1F1C]">
+                    <h3 className="text-sm font-bold text-[#111813]">
                       จัดการข้อมูลส่วนตัว
                     </h3>
-                    <p className="text-xs text-[#5A635D] mt-0.5 leading-relaxed">
+                    <p className="text-xs text-[#65716A] mt-0.5 leading-relaxed">
                       อัปเดตชื่อ-นามสกุล อีเมล และที่อยู่สำหรับติดต่อ
                     </p>
                     <div className="mt-3">
                       <Link
                         href="/member/editprofile"
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A1F1C] hover:text-[#2D7048] transition-colors"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#111813] hover:text-[#2D7048] transition-colors"
                       >
                         <span>แก้ไขโปรไฟล์</span>
                         <ArrowRight size={12} />

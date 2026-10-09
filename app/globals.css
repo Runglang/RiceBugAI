@@ -2,7 +2,7 @@
 
 :root {
   --background: #FFFFFF;
-  --foreground: #1A1F1C;
+  --foreground: #111813;
 
   /* RiceBugAI Official Design System Tokens */
   --color-primary-50: #F0F7F2;
@@ -16,31 +16,31 @@
   --color-primary-800: #1E4730;
   --color-primary-900: #163423;
 
-  --color-canvas: #F7F8F7;
-  --color-ink-100: #F1F3F2;
-  --color-ink-200: #E3E6E4;
-  --color-ink-300: #CDD2CF;
-  --color-ink-400: #9AA29D;
-  --color-ink-500: #6B746E;
-  --color-ink-600: #5A635D;
-  --color-ink-700: #3F4742;
-  --color-ink-900: #1A1F1C;
+  --color-canvas: #F8FAF8;
+  --color-ink-100: #F1F4F2;
+  --color-ink-200: #E1E6E2;
+  --color-ink-300: #CBD3CE;
+  --color-ink-400: #939E97;
+  --color-ink-500: #65716A;
+  --color-ink-600: #4B5750;
+  --color-ink-700: #2D3730;
+  --color-ink-900: #111813;
 
-  --color-success-fg: #1E7B45;
-  --color-success-bg: #E8F5EC;
-  --color-success-line: #B7DFC6;
+  --color-success-fg: #156E3B;
+  --color-success-bg: #E8F6ED;
+  --color-success-line: #B2DEC3;
 
-  --color-warning-fg: #8A5300;
-  --color-warning-bg: #FFF4E0;
-  --color-warning-line: #F0D29A;
+  --color-warning-fg: #8C4E00;
+  --color-warning-bg: #FFF5E3;
+  --color-warning-line: #EFD096;
 
   --color-danger-fg: #B42318;
   --color-danger-bg: #FDECEA;
   --color-danger-line: #F4B9B3;
 
-  --color-info-fg: #1F5F99;
-  --color-info-bg: #E8F1FA;
-  --color-info-line: #B5D3EE;
+  --color-info-fg: #1B578A;
+  --color-info-bg: #EAF3FB;
+  --color-info-line: #B5D4EE;
 }
 
 @theme inline {
@@ -71,8 +71,26 @@
 }
 
 body {
-  background: #FFFFFF;
-  color: #3F4742;
+  background-color: #F8FAF8;
+  color: #2D3730;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Polished subtle shadows and utility styling */
+.card-subtle {
+  background-color: #FFFFFF;
+  border: 1px solid #E1E6E2;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+}
+
+.card-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover:hover {
+  border-color: #CBD3CE;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
 }
