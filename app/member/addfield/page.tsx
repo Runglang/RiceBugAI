@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Calendar, Loader2, AlertCircle, ChevronLeft, MapPin } from 'lucide-react';
+import { Calendar, Loader2, AlertCircle, MapPin } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { getProvinces, getDistricts, getSubdistricts } from '@/app/data/thai_address';
 
@@ -31,6 +30,8 @@ const EMPTY_FORM: PlantingRecordFormData = {
   subdistrict: '',
 };
 
+const emptySubscribe = () => () => {};
+
 export default function PlantingRecordForm() {
   const router = useRouter();
 
@@ -38,7 +39,22 @@ export default function PlantingRecordForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof PlantingRecordFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [memberID, setMemberID] = useState<string | null>(null);
+
+  const sessionCookie = useSyncExternalStore(
+    emptySubscribe,
+    () => Cookies.get('member_session') ?? null,
+    () => null
+  );
+
+  const memberID = useMemo(() => {
+    if (!sessionCookie) return null;
+    try {
+      const member = JSON.parse(sessionCookie);
+      return member?.memberID ?? null;
+    } catch {
+      return null;
+    }
+  }, [sessionCookie]);
 
   const provinces = useMemo(() => getProvinces(), []);
   const districts = useMemo(() => getDistricts(form.province), [form.province]);
@@ -48,13 +64,15 @@ export default function PlantingRecordForm() {
     const session = Cookies.get('member_session');
     if (!session) {
       router.push('/member/login');
-    } else {
-      try {
-        const member = JSON.parse(session);
-        setMemberID(member.memberID);
-      } catch {
+      return;
+    }
+    try {
+      const member = JSON.parse(session);
+      if (!member?.memberID) {
         router.push('/member/login');
       }
+    } catch {
+      router.push('/member/login');
     }
   }, [router]);
 
@@ -203,23 +221,6 @@ export default function PlantingRecordForm() {
   return (
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-2xl mx-auto px-6 pt-8">
-
-        {/* Breadcrumb & Navigation */}
-        <div className="flex items-center justify-between pb-6 mb-6 border-b border-[#E3E6E4]">
-          <div className="flex items-center gap-2 text-sm text-[#5A635D]">
-            <Link href="/member/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
-            <span>/</span>
-            <span className="text-[#1A1F1C] font-semibold">เพิ่มแปลงนาใหม่</span>
-          </div>
-
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-1 text-sm text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
-          >
-            <ChevronLeft size={16} />
-            <span>ย้อนกลับ</span>
-          </button>
-        </div>
 
         {/* Main Form Card */}
         <div className="bg-white border border-[#E3E6E4] rounded-lg p-6 sm:p-8">

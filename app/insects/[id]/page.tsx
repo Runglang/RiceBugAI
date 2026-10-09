@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  ChevronLeft,
   Loader2,
   AlertCircle,
   ZoomIn,
@@ -44,7 +43,6 @@ const DANGER_BADGE: Record<string, { label: string; className: string }> = {
 
 export default function GuestInsectDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const id = params?.id as string;
 
   const [insect, setInsect] = useState<InsectDTO | null>(null);
@@ -54,29 +52,38 @@ export default function GuestInsectDetailPage() {
   const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
-  const fetchInsect = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API_BASE_URL}/${id}`);
-      if (res.status === 404) {
-        setError('ไม่พบข้อมูลแมลงศัตรูพืชในระบบ');
-        return;
-      }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setInsect(data);
-    } catch {
-      setError('ไม่สามารถโหลดข้อมูลรายละเอียดแมลงได้ในขณะนี้');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
   useEffect(() => {
+    if (!id) return;
+    let ignore = false;
+    const fetchInsect = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/${id}`);
+        if (res.status === 404) {
+          if (!ignore) {
+            setError('ไม่พบข้อมูลแมลงศัตรูพืชในระบบ');
+            setLoading(false);
+          }
+          return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!ignore) {
+          setInsect(data);
+          setLoading(false);
+        }
+      } catch {
+        if (!ignore) {
+          setError('ไม่สามารถโหลดข้อมูลรายละเอียดแมลงได้ในขณะนี้');
+          setLoading(false);
+        }
+      }
+    };
+
     fetchInsect();
-  }, [fetchInsect]);
+    return () => {
+      ignore = true;
+    };
+  }, [id]);
 
   const images = insect?.insectImg && insect.insectImg.length > 0 ? insect.insectImg : [];
   const currentImg = images[activeImgIndex] || null;
@@ -86,25 +93,6 @@ export default function GuestInsectDetailPage() {
       <GuestHeader />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-8">
-
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center justify-between pb-6 mb-6 border-b border-[#E3E6E4]">
-          <div className="flex items-center gap-2 text-sm text-[#5A635D]">
-            <Link href="/" className="hover:text-[#1A1F1C] hover:underline">หน้าแรก</Link>
-            <span>/</span>
-            <Link href="/insects" className="hover:text-[#1A1F1C] hover:underline">แมลงศัตรูข้าว</Link>
-            <span>/</span>
-            <span className="text-[#1A1F1C] font-semibold">{insect?.insectName || 'รายละเอียด'}</span>
-          </div>
-
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-1 text-sm text-[#5A635D] hover:text-[#1A1F1C] font-medium cursor-pointer"
-          >
-            <ChevronLeft size={16} />
-            <span>ย้อนกลับ</span>
-          </button>
-        </div>
 
         {/* State Handling */}
         {loading ? (
@@ -124,16 +112,59 @@ export default function GuestInsectDetailPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6">
 
-            {/* Specimen Details Card */}
-            <div className="bg-white border border-[#E3E6E4] rounded-lg p-6 grid grid-cols-1 md:grid-cols-12 gap-8">
+            {/* 1. Rice Growth Stages Affected Section (PROMINENT AT TOP) */}
+            <div className="bg-white border border-[#E1E6E2] rounded-xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-bold text-[#111813]">
+                  ระยะการเจริญเติบโตของข้าวที่ถูกเข้าทำลาย
+                </h2>
+                {insect.riceGrowthStages && insect.riceGrowthStages.length > 0 && (
+                  <span className="text-xs text-[#156E3B] font-semibold bg-[#E8F6ED] border border-[#B2DEC3] px-2.5 py-0.5 rounded-full">
+                    พบใน {insect.riceGrowthStages.length} ระยะ
+                  </span>
+                )}
+              </div>
+
+              {!insect.riceGrowthStages || insect.riceGrowthStages.length === 0 ? (
+                <div className="text-xs sm:text-sm text-[#65716A] py-3 text-center bg-[#F8FAF8] rounded-lg border border-[#E1E6E2]">
+                  ไม่มีการระบุระยะการเจริญเติบโตที่เฉพาะเจาะจง (สามารถเข้าทำลายได้ทุกระยะ)
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {insect.riceGrowthStages.map((st) => (
+                    <div
+                      key={st.stageID || st.stageName}
+                      className="p-3.5 bg-[#F8FAF8] border border-[#E1E6E2] hover:border-[#B2DEC3] rounded-lg transition-colors"
+                    >
+                      <div className="flex items-center justify-between text-sm font-bold text-[#111813] mb-1">
+                        <span>{st.stageName}</span>
+                        {st.durationRange && (
+                          <span className="text-xs bg-white px-2 py-0.5 rounded text-[#4B5750] font-medium border border-[#E1E6E2]">
+                            {st.durationRange}
+                          </span>
+                        )}
+                      </div>
+                      {st.stageDes && (
+                        <p className="text-xs text-[#65716A] leading-relaxed mt-1">
+                          {st.stageDes}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 2. Specimen Details Card */}
+            <div className="bg-white border border-[#E1E6E2] rounded-xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">
 
               {/* Left: Specimen Gallery */}
               <div className="md:col-span-5 space-y-3">
                 <div
                   onClick={() => currentImg && setIsZoomOpen(true)}
-                  className={`w-full h-64 bg-[#F1F3F2] rounded-md border border-[#E3E6E4] relative overflow-hidden flex items-center justify-center ${
+                  className={`w-full h-64 bg-[#F8FAF8] rounded-lg border border-[#E1E6E2] relative overflow-hidden flex items-center justify-center ${
                     currentImg ? 'cursor-zoom-in group' : ''
                   }`}
                 >
@@ -152,7 +183,7 @@ export default function GuestInsectDetailPage() {
                       </div>
                     </>
                   ) : (
-                    <span className="text-sm text-[#9AA29D]">ไม่มีรูปภาพ</span>
+                    <span className="text-xs text-[#939E97]">ไม่มีรูปภาพ</span>
                   )}
                 </div>
 
@@ -163,10 +194,10 @@ export default function GuestInsectDetailPage() {
                       <button
                         key={idx}
                         onClick={() => setActiveImgIndex(idx)}
-                        className={`w-14 h-14 rounded-md border overflow-hidden relative shrink-0 transition-all ${
+                        className={`w-14 h-14 rounded-lg border overflow-hidden relative shrink-0 transition-all cursor-pointer ${
                           activeImgIndex === idx
-                            ? 'border-[#2D7048] ring-2 ring-[#B9DBC6]'
-                            : 'border-[#E3E6E4] opacity-70 hover:opacity-100'
+                            ? 'border-[#2D7048] ring-2 ring-[#B2DEC3]'
+                            : 'border-[#E1E6E2] opacity-70 hover:opacity-100'
                         }`}
                       >
                         <Image src={img} alt="" fill className="object-cover" unoptimized />
@@ -180,53 +211,53 @@ export default function GuestInsectDetailPage() {
               <div className="md:col-span-7 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-[#5A635D] font-medium">
+                    <span className="text-xs sm:text-sm text-[#65716A] font-medium">
                       {insect.insectType || 'ศัตรูพืชในนาข้าว'}
                     </span>
                     {(() => {
                       const danger = DANGER_BADGE[insect.dangerLevel?.toLowerCase()] || {
                         label: insect.dangerLevel || 'ทั่วไป',
-                        className: 'bg-[#F1F3F2] text-[#3F4742] border-[#E3E6E4]',
+                        className: 'bg-[#F1F4F2] text-[#2D3730] border-[#E1E6E2]',
                       };
                       return (
-                        <span className={`px-2.5 py-0.5 rounded-sm border text-xs font-medium ${danger.className}`}>
+                        <span className={`px-2.5 py-0.5 rounded-full border text-xs font-semibold ${danger.className}`}>
                           {danger.label}
                         </span>
                       );
                     })()}
                   </div>
 
-                  <h1 className="text-2xl sm:text-3xl font-bold text-[#1A1F1C] tracking-tight">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-[#111813] tracking-tight">
                     {insect.insectName}
                   </h1>
-                  <p className="text-sm text-[#5A635D] mt-1">
+                  <p className="text-sm italic text-[#65716A] mt-1">
                     {insect.scientificName || '—'}
                   </p>
 
-                  <div className="grid grid-cols-2 gap-3 my-5 p-3.5 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md">
+                  <div className="grid grid-cols-2 gap-3 my-4 p-3.5 bg-[#F8FAF8] border border-[#E1E6E2] rounded-lg">
                     <div>
-                      <div className="text-xs text-[#5A635D]">ประเภทแมลง</div>
-                      <div className="text-sm font-semibold text-[#1A1F1C] mt-0.5">{insect.insectType || '—'}</div>
+                      <div className="text-xs text-[#65716A]">ประเภทแมลง</div>
+                      <div className="text-sm font-semibold text-[#111813] mt-0.5">{insect.insectType || '—'}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-[#5A635D]">การจัดหมวดหมู่</div>
-                      <div className="text-sm font-semibold text-[#1A1F1C] mt-0.5">ศัตรูพืชในนาข้าว</div>
+                      <div className="text-xs text-[#65716A]">การจัดหมวดหมู่</div>
+                      <div className="text-sm font-semibold text-[#111813] mt-0.5">ศัตรูพืชในนาข้าว</div>
                     </div>
                   </div>
 
                   <div>
-                    <div className="text-sm font-semibold text-[#1A1F1C] mb-1.5">ลักษณะและพฤติกรรมการทำลาย:</div>
-                    <p className="text-sm text-[#3F4742] leading-relaxed whitespace-pre-line">
+                    <div className="text-sm font-semibold text-[#111813] mb-1.5">ลักษณะและพฤติกรรมการทำลาย:</div>
+                    <p className="text-xs sm:text-sm text-[#4B5750] leading-relaxed whitespace-pre-line">
                       {insect.insectDes || 'ไม่มีข้อมูลคำอธิบายเพิ่มเติม'}
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-4 mt-6 border-t border-[#E3E6E4] flex items-center justify-between text-xs text-[#5A635D]">
+                <div className="pt-4 mt-6 border-t border-[#E1E6E2] flex items-center justify-between text-xs text-[#65716A]">
                   <span>ข้อมูลชีววิทยาอ้างอิงตามมาตรฐานวิชาการ</span>
                   <Link
                     href="/chemicals"
-                    className="text-[#2D7048] hover:text-[#25593A] font-medium inline-flex items-center gap-1"
+                    className="text-[#2D7048] hover:text-[#25593A] font-semibold inline-flex items-center gap-1 transition-colors"
                   >
                     <span>ดูสารเคมีที่แนะนำ</span>
                     <ArrowRight size={13} />
@@ -234,42 +265,6 @@ export default function GuestInsectDetailPage() {
                 </div>
               </div>
 
-            </div>
-
-            {/* Rice Growth Stages Affected Section */}
-            <div className="bg-[#F7F8F7] border border-[#E3E6E4] rounded-lg p-6">
-              <h2 className="text-base font-bold text-[#1A1F1C] mb-4">
-                ระยะการเจริญเติบโตของข้าวที่ถูกเข้าทำลาย
-              </h2>
-
-              {!insect.riceGrowthStages || insect.riceGrowthStages.length === 0 ? (
-                <div className="text-sm text-[#5A635D]">
-                  ไม่มีการระบุระยะการเจริญเติบโตที่เฉพาะเจาะจง (สามารถเข้าทำลายได้ทุกระยะ)
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {insect.riceGrowthStages.map((st) => (
-                    <div
-                      key={st.stageID || st.stageName}
-                      className="p-3.5 bg-white border border-[#E3E6E4] rounded-md"
-                    >
-                      <div className="flex items-center justify-between text-sm font-semibold text-[#1A1F1C] mb-1">
-                        <span>{st.stageName}</span>
-                        {st.durationRange && (
-                          <span className="text-xs bg-[#F1F3F2] px-2 py-0.5 rounded-sm text-[#5A635D] font-normal border border-[#E3E6E4]">
-                            {st.durationRange}
-                          </span>
-                        )}
-                      </div>
-                      {st.stageDes && (
-                        <p className="text-xs text-[#5A635D] leading-relaxed mt-1">
-                          {st.stageDes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
           </div>

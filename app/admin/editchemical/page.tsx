@@ -2,9 +2,8 @@
 
 import { useState, useEffect, ChangeEvent, FormEvent, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Camera, X, Loader2, AlertCircle, CheckCircle2, ChevronLeft, Save } from 'lucide-react';
+import ImageUpload from '@/app/components/shared/ImageUpload';
+import { X, Loader2, AlertCircle, CheckCircle2, Save } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const CHEMICALS_API_URL = `${API_ORIGIN}/api/v1/chemicals`;
@@ -199,12 +198,17 @@ function EditChemicalForm() {
     setTargetInsects(targetInsects.filter((i) => i.insectID !== insectID));
   };
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = (file: File) => {
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
     setImageRemoved(false);
+  };
+
+  const handleFileRemove = () => {
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    setImageRemoved(true);
   };
 
   useEffect(() => {
@@ -212,12 +216,6 @@ function EditChemicalForm() {
       if (imagePreview) URL.revokeObjectURL(imagePreview);
     };
   }, [imagePreview]);
-
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    setImageRemoved(true);
-  };
 
   const buildPayload = (): Omit<ChemicalDTO, 'chemicalID' | 'chemicalImg'> => ({
     chemicalName: formData.chemicalName,
@@ -298,7 +296,6 @@ function EditChemicalForm() {
 
   const isSubmitting = status.state === 'loading';
   const isSubmitDisabled = isSubmitting || insectsLoading;
-  const displayImageUrl = imagePreview ?? (imageRemoved ? null : existingImageUrl);
 
   if (pageState === 'loading') {
     return (
@@ -347,70 +344,22 @@ function EditChemicalForm() {
   return (
     <div className="space-y-6 font-sans">
 
-      {/* Navigation & Header */}
-      <div className="flex items-center justify-between pb-6 border-b border-[#E3E6E4]">
-        <div className="flex items-center gap-2 text-xs text-[#5A635D]">
-          <Link href="/admin/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
-          <span>/</span>
-          <Link href="/admin/listadminchemicals" className="hover:text-[#1A1F1C] transition-colors">จัดการข้อมูลสารเคมี</Link>
-          <span>/</span>
-          <span className="text-[#1A1F1C] font-semibold">แก้ไขข้อมูลสารเคมี</span>
-        </div>
-
-        <Link
-          href="/admin/listadminchemicals"
-          className="inline-flex items-center gap-1.5 text-xs text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
-        >
-          <ChevronLeft size={16} />
-          <span>ย้อนกลับ</span>
-        </Link>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
 
         {/* Left Column: Image Upload */}
         <div className="md:col-span-5 bg-white border border-[#E3E6E4] rounded-lg p-6 space-y-4">
-          <div>
-            <h2 className="text-sm font-bold text-[#1A1F1C]">ภาพบรรจุภัณฑ์สารเคมี</h2>
-            <p className="text-xs text-[#5A635D] mt-1">
-              อัปเดตภาพฉลากหรือบรรจุภัณฑ์
-            </p>
-          </div>
-
-          <div className="border border-dashed border-[#CDD2CF] bg-[#F7F8F7] rounded-lg p-4 flex flex-col items-center justify-center text-center">
-            <div className="w-full aspect-square bg-[#F1F3F2] rounded-md mb-3 overflow-hidden relative border border-[#E3E6E4] flex items-center justify-center">
-              {displayImageUrl ? (
-                <Image
-                  src={displayImageUrl}
-                  alt={formData.chemicalName || 'รูปสารเคมี'}
-                  fill
-                  unoptimized
-                  className="object-contain"
-                />
-              ) : (
-                <div className="text-center text-xs text-[#9AA29D] flex flex-col items-center gap-1">
-                  <span>ไม่มีรูปภาพ</span>
-                </div>
-              )}
-            </div>
-
-            <label className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs font-medium text-[#1A1F1C] hover:bg-[#F1F3F2] transition-colors cursor-pointer mb-2">
-              <Camera size={14} />
-              <span>เลือกไฟล์ภาพใหม่</span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-            </label>
-
-            {displayImageUrl && (
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="text-xs text-[#B42318] hover:underline cursor-pointer font-medium"
-              >
-                ลบรูปภาพ
-              </button>
-            )}
-            <p className="text-[11px] text-[#5A635D] mt-1">PNG, JPG, WEBP (สูงสุด 10MB)</p>
-          </div>
+          <ImageUpload
+            label="ภาพบรรจุภัณฑ์สารเคมี"
+            description="อัปเดตภาพฉลากหรือบรรจุภัณฑ์"
+            mode="single"
+            existingImageUrl={imageRemoved ? null : existingImageUrl}
+            selectedFile={imageFile}
+            previewUrl={imagePreview}
+            onFileSelect={handleFileSelect}
+            onFileRemove={handleFileRemove}
+            maxSizeBytes={10 * 1024 * 1024}
+            helperText="PNG, JPG, WEBP (สูงสุด 10MB)"
+          />
         </div>
 
         {/* Right Column: Key Details */}

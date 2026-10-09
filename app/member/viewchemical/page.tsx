@@ -10,7 +10,6 @@ import {
   AlertCircle,
   AlertTriangle,
   X,
-  ChevronLeft,
   ArrowRight,
 } from 'lucide-react';
 
@@ -138,25 +137,6 @@ function ChemicalDetailContent() {
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-5xl mx-auto px-6 pt-8">
 
-        {/* Breadcrumb */}
-        <div className="flex items-center justify-between pb-6 mb-6 border-b border-[#E3E6E4]">
-          <div className="flex items-center gap-2 text-sm text-[#5A635D]">
-            <Link href="/member/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
-            <span>/</span>
-            <Link href="/member/listchemicals" className="hover:text-[#1A1F1C] transition-colors">คลังสารเคมี</Link>
-            <span>/</span>
-            <span className="text-[#1A1F1C] font-semibold">{chemical.chemicalName}</span>
-          </div>
-
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-1 text-sm text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
-          >
-            <ChevronLeft size={16} />
-            <span>ย้อนกลับ</span>
-          </button>
-        </div>
-
         <div className="space-y-8">
 
           {/* Main Overview Card */}
@@ -261,24 +241,24 @@ function ChemicalDetailContent() {
           </div>
 
           {/* Target Insects Section */}
-          <div className="bg-white border border-[#E3E6E4] rounded-lg p-6">
+          <div className="bg-white border border-[#E1E6E2] rounded-xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base sm:text-lg font-bold text-[#1A1F1C]">
+              <h3 className="text-base font-bold text-[#111813]">
                 แมลงเป้าหมายในการควบคุมกำจัด
               </h3>
               {chemical.targetInsects && chemical.targetInsects.length > 0 && (
-                <span className="text-xs text-[#5A635D]">
+                <span className="text-xs text-[#156E3B] font-semibold bg-[#E8F6ED] border border-[#B2DEC3] px-2.5 py-0.5 rounded-full">
                   {chemical.targetInsects.length} ชนิด
                 </span>
               )}
             </div>
 
             {!chemical.targetInsects || chemical.targetInsects.length === 0 ? (
-              <div className="text-sm text-[#5A635D] py-6 text-center bg-[#F7F8F7] rounded-md border border-[#E3E6E4]">
+              <div className="text-xs sm:text-sm text-[#65716A] py-6 text-center bg-[#F8FAF8] rounded-lg border border-[#E1E6E2]">
                 ไม่มีการระบุแมลงเป้าหมายเฉพาะ
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
                 {chemical.targetInsects.map((ins) => {
                   const insectPhoto =
                     Array.isArray(ins.insectImg) && ins.insectImg.length > 0
@@ -291,7 +271,7 @@ function ChemicalDetailContent() {
                     <Link
                       key={ins.insectID}
                       href={`/member/viewinsect?id=${ins.insectID}`}
-                      className="group relative h-40 sm:h-44 rounded-xl overflow-hidden border border-[#E3E6E4] hover:border-[#2D7048] shadow-xs hover:shadow-md transition-all flex flex-col justify-end p-4 bg-linear-to-br from-[#4A5568] to-[#2D3748]"
+                      className="group relative h-36 sm:h-40 max-w-full rounded-xl overflow-hidden border border-[#E1E6E2] hover:border-[#2D7048] shadow-2xs hover:shadow-md transition-all flex flex-col justify-end p-3.5 bg-[#2D3730] shrink-0"
                     >
                       {/* Background Photo */}
                       {insectPhoto ? (
@@ -299,17 +279,18 @@ function ChemicalDetailContent() {
                           src={insectPhoto}
                           alt={ins.insectName}
                           fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover object-center max-w-full max-h-full transition-transform duration-500 group-hover:scale-105"
                           unoptimized
                         />
                       ) : null}
 
                       {/* Dark Gradient Overlay for readability */}
-                      <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-black/10 group-hover:from-black/95 group-hover:via-black/50 transition-colors" />
+                      <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/45 to-black/10 group-hover:from-black/95 group-hover:via-black/55 transition-colors pointer-events-none" />
 
                       {/* Bottom Info */}
-                      <div className="relative z-10 space-y-0.5">
-                        <div className="text-base font-bold text-white group-hover:text-[#A7F3D0] transition-colors leading-snug drop-shadow-sm">
+                      <div className="relative z-10 space-y-0.5 max-w-full">
+                        <div className="text-sm sm:text-base font-bold text-white group-hover:text-[#A7F3D0] transition-colors leading-snug truncate drop-shadow-sm">
                           {ins.insectName}
                         </div>
                         <div className="text-xs text-white/80 italic truncate font-normal">

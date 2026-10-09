@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, ChangeEvent, FormEvent, Suspense } from 'react';
+import { useState, useEffect, FormEvent, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Upload, Trash2, Save, Loader2, AlertCircle, CheckCircle2, ChevronLeft } from 'lucide-react';
+import ImageUpload from '@/app/components/shared/ImageUpload';
+import { Save, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const API_BASE_URL = `${API_ORIGIN}/api/v1/insects`;
@@ -101,7 +100,6 @@ function EditInsectForm() {
 
   useEffect(() => {
     if (!insectId) {
-      setPageState('notFound');
       return;
     }
 
@@ -152,14 +150,10 @@ function EditInsectForm() {
     }));
   };
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    const newFiles = Array.from(files);
+  const handleFilesAdd = (newFiles: File[]) => {
     const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
     setImageFiles((prev) => [...prev, ...newFiles]);
     setImagePreviews((prev) => [...prev, ...newPreviews]);
-    e.target.value = '';
   };
 
   const removeNewImage = (index: number) => {
@@ -241,16 +235,7 @@ function EditInsectForm() {
   const isSubmitting = status.state === 'loading';
   const isSubmitDisabled = isSubmitting || stagesLoading;
 
-  if (pageState === 'loading') {
-    return (
-      <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D] font-sans">
-        <Loader2 className="w-6 h-6 animate-spin text-[#2D7048]" />
-        <span>กำลังโหลดข้อมูลทะเบียนแมลง...</span>
-      </div>
-    );
-  }
-
-  if (pageState === 'notFound') {
+  if (!insectId || pageState === 'notFound') {
     return (
       <div className="max-w-md mx-auto my-16 p-8 bg-[#FDECEA] border border-[#F4B9B3] rounded-lg text-center space-y-3 font-sans">
         <AlertCircle className="w-8 h-8 text-[#B42318] mx-auto" />
@@ -261,6 +246,15 @@ function EditInsectForm() {
         >
           กลับไปหน้ารายการ
         </button>
+      </div>
+    );
+  }
+
+  if (pageState === 'loading') {
+    return (
+      <div className="py-24 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D] font-sans">
+        <Loader2 className="w-6 h-6 animate-spin text-[#2D7048]" />
+        <span>กำลังโหลดข้อมูลทะเบียนแมลง...</span>
       </div>
     );
   }
@@ -283,101 +277,22 @@ function EditInsectForm() {
   return (
     <div className="space-y-6 font-sans">
 
-      {/* Navigation & Header */}
-      <div className="flex items-center justify-between pb-6 border-b border-[#E3E6E4]">
-        <div className="flex items-center gap-2 text-xs text-[#5A635D]">
-          <Link href="/admin/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
-          <span>/</span>
-          <Link href="/admin/listadmininsects" className="hover:text-[#1A1F1C] transition-colors">จัดการข้อมูลแมลง</Link>
-          <span>/</span>
-          <span className="text-[#1A1F1C] font-semibold">แก้ไข {formData.commonName}</span>
-        </div>
-
-        <Link
-          href="/admin/listadmininsects"
-          className="inline-flex items-center gap-1.5 text-xs text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
-        >
-          <ChevronLeft size={16} />
-          <span>ย้อนกลับ</span>
-        </Link>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
 
         {/* Left Column: Image Management */}
         <div className="md:col-span-5 bg-white border border-[#E3E6E4] rounded-lg p-6 space-y-4">
-          <div>
-            <h2 className="text-sm font-bold text-[#1A1F1C]">จัดการรูปภาพสัณฐานวิทยา</h2>
-            <p className="text-xs text-[#5A635D] mt-1">
-              รูปภาพที่มีอยู่ในระบบ และสามารถอัปโหลดรูปภาพใหม่เพิ่มเติมได้
-            </p>
-          </div>
-
-          {/* Existing Images */}
-          {existingImageUrls.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-[#1A1F1C] mb-2">รูปภาพปัจจุบัน ({existingImageUrls.length})</p>
-              <div className="grid grid-cols-2 gap-2.5">
-                {existingImageUrls.map((url, idx) => (
-                  <div key={`old-${idx}`} className="relative aspect-square rounded-md overflow-hidden border border-[#E3E6E4] bg-[#F1F3F2] group">
-                    <Image
-                      src={url}
-                      alt={`รูปเดิม ${idx + 1}`}
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeExistingImage(idx)}
-                      className="absolute top-1.5 right-1.5 p-1 bg-black/60 hover:bg-[#B42318] text-white rounded-full transition-colors cursor-pointer"
-                      title="ลบรูปนี้"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* New Previews */}
-          {imagePreviews.length > 0 && (
-            <div className="pt-3 border-t border-[#E3E6E4]">
-              <p className="text-xs font-semibold text-[#2D7048] mb-2">รูปใหม่ที่รอการอัปโหลด ({imagePreviews.length})</p>
-              <div className="grid grid-cols-2 gap-2.5">
-                {imagePreviews.map((preview, idx) => (
-                  <div key={`new-${idx}`} className="relative aspect-square rounded-md overflow-hidden border border-[#B9DBC6] bg-[#F0F7F2] group">
-                    <Image
-                      src={preview}
-                      alt={`รูปใหม่ ${idx + 1}`}
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeNewImage(idx)}
-                      className="absolute top-1.5 right-1.5 p-1 bg-black/60 hover:bg-[#B42318] text-white rounded-full transition-colors cursor-pointer"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Upload Button */}
-          <label className="border border-dashed border-[#CDD2CF] bg-[#F7F8F7] hover:bg-[#F1F3F2] rounded-lg p-5 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group">
-            <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
-            <div className="w-9 h-9 rounded-full bg-[#F0F7F2] text-[#2D7048] border border-[#B9DBC6] flex items-center justify-center mb-1.5 group-hover:scale-105 transition-transform">
-              <Upload size={15} />
-            </div>
-            <p className="text-xs font-semibold text-[#1A1F1C]">
-              คลิกเพื่อเพิ่มรูปภาพ
-            </p>
-          </label>
+          <ImageUpload
+            label="จัดการรูปภาพสัณฐานวิทยา"
+            description="รูปภาพที่มีอยู่ในระบบ และสามารถอัปโหลดรูปภาพใหม่เพิ่มเติมได้"
+            mode="multiple"
+            existingImageUrls={existingImageUrls}
+            onExistingRemoveIndex={removeExistingImage}
+            selectedFiles={imageFiles}
+            previewUrls={imagePreviews}
+            onFilesAdd={handleFilesAdd}
+            onFileRemoveIndex={removeNewImage}
+            helperText="PNG, JPG, WEBP (รองรับหลายไฟล์)"
+          />
         </div>
 
         {/* Right Column: Taxonomy Details */}

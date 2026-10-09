@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -40,23 +40,31 @@ interface AnalysisResultDTO {
   fieldID?: string | null;
 }
 
+const emptySubscribe = () => () => {};
+
 export default function AnalysisInsectResultPage() {
   const router = useRouter();
-  const [result, setResult] = useState<AnalysisResultDTO | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const isClient = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
+
+  const rawResult = useSyncExternalStore(
+    emptySubscribe,
+    () => (typeof window !== 'undefined' ? sessionStorage.getItem('analysis_result') : null),
+    () => null
+  );
+
+  const result = useMemo<AnalysisResultDTO | null>(() => {
+    if (!rawResult) return null;
     try {
-      const stored = sessionStorage.getItem('analysis_result');
-      if (stored) {
-        setResult(JSON.parse(stored));
-      }
+      return JSON.parse(rawResult);
     } catch {
-      setResult(null);
-    } finally {
-      setLoading(false);
+      return null;
     }
-  }, []);
+  }, [rawResult]);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '—';
@@ -72,7 +80,7 @@ export default function AnalysisInsectResultPage() {
     }
   };
 
-  if (loading) {
+  if (!isClient) {
     return (
       <div className="min-h-screen bg-[#F7F8F7] py-24 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D] font-sans">
         <Loader2 className="w-6 h-6 animate-spin text-[#2D7048]" />
@@ -212,7 +220,7 @@ export default function AnalysisInsectResultPage() {
                       ภาพอ้างอิงจากฐานข้อมูล ({result.insect.insectImg.length} รูป):
                     </div>
                     <div className="flex items-center gap-3 overflow-x-auto pb-2">
-                      {result.insect.insectImg.map((imgUrl, idx) => (
+                      {result.insect.insectImg.map((imgUrl: string, idx: number) => (
                         <div
                           key={idx}
                           className="relative w-24 h-20 shrink-0 bg-[#F1F3F2] rounded-md border border-[#E3E6E4] overflow-hidden"

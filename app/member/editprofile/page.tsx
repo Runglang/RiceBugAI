@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  ChevronRight,
   Save,
   ShieldCheck,
 } from 'lucide-react';
@@ -43,10 +42,27 @@ const EMPTY_FORM: FormState = {
   address: '',
 };
 
+const emptySubscribe = () => () => {};
+
 export default function EditProfilePage() {
   const router = useRouter();
 
-  const [memberID, setMemberID] = useState<string | null>(null);
+  const sessionCookie = useSyncExternalStore(
+    emptySubscribe,
+    () => Cookies.get('member_session') ?? null,
+    () => null
+  );
+
+  const memberID = useMemo(() => {
+    if (!sessionCookie) return null;
+    try {
+      const parsed = JSON.parse(sessionCookie);
+      return parsed.memberID ?? null;
+    } catch {
+      return null;
+    }
+  }, [sessionCookie]);
+
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
@@ -70,7 +86,6 @@ export default function EditProfilePage() {
         router.push('/member/login');
         return;
       }
-      setMemberID(mId);
 
       // Fetch latest profile from Backend API
       const fetchProfile = async () => {
@@ -227,15 +242,8 @@ export default function EditProfilePage() {
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8">
 
-        {/* Breadcrumb Header */}
+        {/* Header */}
         <div className="pb-6 mb-8 border-b border-[#E3E6E4]">
-          <div className="flex items-center gap-2 text-xs text-[#5A635D] mb-1">
-            <Link href="/member/dashboard" className="hover:text-[#1A1F1C] transition-colors">
-              แดชบอร์ด
-            </Link>
-            <ChevronRight size={12} />
-            <span className="text-[#1A1F1C] font-medium">ข้อมูลส่วนตัว</span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
             แก้ไขข้อมูลส่วนตัว
           </h1>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -49,29 +49,42 @@ export default function GuestInsectCatalog() {
   const [insects, setInsects] = useState<InsectDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStage, setSelectedStage] = useState(ALL_STAGES);
   const [page, setPage] = useState(1);
 
-  const fetchInsects = useCallback(async () => {
+  const handleRetry = () => {
     setLoading(true);
     setError(null);
-    try {
-      const res = await fetch(API_BASE_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setInsects(Array.isArray(data) ? data : []);
-    } catch {
-      setError('ไม่สามารถเชื่อมต่อกับระบบฐานข้อมูลได้ในขณะนี้');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    setReloadKey((k) => k + 1);
+  };
 
   useEffect(() => {
+    let ignore = false;
+    const fetchInsects = async () => {
+      try {
+        const res = await fetch(API_BASE_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!ignore) {
+          setInsects(Array.isArray(data) ? data : []);
+          setLoading(false);
+        }
+      } catch {
+        if (!ignore) {
+          setError('ไม่สามารถเชื่อมต่อกับระบบฐานข้อมูลได้ในขณะนี้');
+          setLoading(false);
+        }
+      }
+    };
+
     fetchInsects();
-  }, [fetchInsects]);
+    return () => {
+      ignore = true;
+    };
+  }, [reloadKey]);
 
   // รวบรวมระยะการเติบโตข้าวทั้งหมด
   const stageOptions = useMemo(() => {
@@ -173,7 +186,7 @@ export default function GuestInsectCatalog() {
             <AlertCircle size={24} />
             <span>{error}</span>
             <button
-              onClick={fetchInsects}
+              onClick={handleRetry}
               className="mt-2 px-4 py-2 bg-white border border-[#CDD2CF] text-[#1A1F1C] rounded-md text-sm font-medium hover:bg-[#F1F3F2] transition-colors cursor-pointer"
             >
               ลองใหม่อีกครั้ง

@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Upload, X, Save, Loader2, AlertCircle, CheckCircle2, ChevronLeft } from 'lucide-react';
+import ImageUpload from '@/app/components/shared/ImageUpload';
+import { Save, Loader2, AlertCircle, CheckCircle2, X } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const CHEMICALS_API_URL = `${API_ORIGIN}/api/v1/chemicals`;
@@ -140,11 +139,15 @@ export default function AddChemicalPage() {
     setTargetInsects(targetInsects.filter((i) => i.insectID !== insectID));
   };
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = (file: File) => {
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleFileRemove = () => {
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
   };
 
   useEffect(() => {
@@ -156,9 +159,7 @@ export default function AddChemicalPage() {
   const handleReset = () => {
     setFormData(initialFormState);
     setTargetInsects([]);
-    setImageFile(null);
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImagePreview(null);
+    handleFileRemove();
     setStatus({ state: 'idle', message: '' });
   };
 
@@ -250,75 +251,21 @@ export default function AddChemicalPage() {
   return (
     <div className="space-y-6 font-sans">
 
-      {/* Navigation & Header */}
-      <div className="flex items-center justify-between pb-6 border-b border-[#E3E6E4]">
-        <div className="flex items-center gap-2 text-xs text-[#5A635D]">
-          <Link href="/admin/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
-          <span>/</span>
-          <Link href="/admin/listadminchemicals" className="hover:text-[#1A1F1C] transition-colors">จัดการข้อมูลสารเคมี</Link>
-          <span>/</span>
-          <span className="text-[#1A1F1C] font-semibold">เพิ่มทะเบียนสารเคมี</span>
-        </div>
-
-        <Link
-          href="/admin/listadminchemicals"
-          className="inline-flex items-center gap-1.5 text-xs text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
-        >
-          <ChevronLeft size={16} />
-          <span>ย้อนกลับ</span>
-        </Link>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
 
         {/* Left Column: Image Upload */}
         <div className="md:col-span-5 bg-white border border-[#E3E6E4] rounded-lg p-6 space-y-4">
-          <div>
-            <h2 className="text-sm font-bold text-[#1A1F1C]">ภาพบรรจุภัณฑ์สารเคมี</h2>
-            <p className="text-xs text-[#5A635D] mt-1">
-              อัปโหลดภาพฉลากหรือบรรจุภัณฑ์ที่มีความชัดเจน
-            </p>
-          </div>
-
-          <label className="relative border border-dashed border-[#CDD2CF] bg-[#F7F8F7] hover:bg-[#F1F3F2] rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group min-h-[260px] overflow-hidden">
-            <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-            {imagePreview ? (
-              <div className="relative w-full h-56 rounded-md overflow-hidden">
-                <Image
-                  src={imagePreview}
-                  alt="ตัวอย่างรูปสารเคมี"
-                  fill
-                  unoptimized
-                  className="object-contain"
-                />
-              </div>
-            ) : (
-              <>
-                <div className="w-10 h-10 rounded-full bg-[#F0F7F2] text-[#2D7048] border border-[#B9DBC6] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                  <Upload size={18} />
-                </div>
-                <p className="text-xs font-semibold text-[#1A1F1C] mb-1">
-                  คลิกเพื่อเลือกไฟล์รูปภาพ
-                </p>
-                <p className="text-[11px] text-[#5A635D]">
-                  PNG, JPG, WEBP (สูงสุด 10MB)
-                </p>
-              </>
-            )}
-          </label>
-
-          {imagePreview && (
-            <button
-              type="button"
-              onClick={() => {
-                setImageFile(null);
-                setImagePreview(null);
-              }}
-              className="w-full text-center text-xs font-medium text-[#B42318] hover:underline cursor-pointer"
-            >
-              ลบรูปภาพที่เลือก
-            </button>
-          )}
+          <ImageUpload
+            label="ภาพบรรจุภัณฑ์สารเคมี"
+            description="อัปโหลดภาพฉลากหรือบรรจุภัณฑ์ที่มีความชัดเจน"
+            mode="single"
+            selectedFile={imageFile}
+            previewUrl={imagePreview}
+            onFileSelect={handleFileSelect}
+            onFileRemove={handleFileRemove}
+            maxSizeBytes={10 * 1024 * 1024}
+            helperText="PNG, JPG, WEBP (สูงสุด 10MB)"
+          />
         </div>
 
         {/* Right Column: Chemical Form */}

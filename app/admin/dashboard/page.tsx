@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
@@ -40,6 +40,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Modal ยืนยันการลบ
   const [deleteTarget, setDeleteTarget] = useState<InsectDTO | null>(null);
@@ -54,38 +55,40 @@ export default function AdminDashboard() {
   }, [router]);
 
   // 2. Fetch ข้อมูลสำหรับ Dashboard
-  const loadDashboardData = useCallback(async () => {
-    setLoading(true);
-    setErrorMsg(null);
-    try {
-      const [insectsRes, chemicalsRes] = await Promise.allSettled([
-        fetch(`${API_ORIGIN}/api/v1/insects`),
-        fetch(`${API_ORIGIN}/api/v1/chemicals`),
-      ]);
-
-      if (insectsRes.status === 'fulfilled' && insectsRes.value.ok) {
-        const data: InsectDTO[] = await insectsRes.value.json();
-        setInsects(Array.isArray(data) ? data : []);
-      } else {
-        setInsects([]);
-      }
-
-      if (chemicalsRes.status === 'fulfilled' && chemicalsRes.value.ok) {
-        const chemData = await chemicalsRes.value.json();
-        setChemicalCount(Array.isArray(chemData) ? chemData.length : 0);
-      } else {
-        setChemicalCount(0);
-      }
-    } catch {
-      setErrorMsg('ไม่สามารถโหลดข้อมูลแดชบอร์ดได้');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
+    let ignore = false;
+    const loadDashboardData = async () => {
+      try {
+        const [insectsRes, chemicalsRes] = await Promise.allSettled([
+          fetch(`${API_ORIGIN}/api/v1/insects`),
+          fetch(`${API_ORIGIN}/api/v1/chemicals`),
+        ]);
+
+        if (insectsRes.status === 'fulfilled' && insectsRes.value.ok) {
+          const data: InsectDTO[] = await insectsRes.value.json();
+          if (!ignore) setInsects(Array.isArray(data) ? data : []);
+        } else {
+          if (!ignore) setInsects([]);
+        }
+
+        if (chemicalsRes.status === 'fulfilled' && chemicalsRes.value.ok) {
+          const chemData = await chemicalsRes.value.json();
+          if (!ignore) setChemicalCount(Array.isArray(chemData) ? chemData.length : 0);
+        } else {
+          if (!ignore) setChemicalCount(0);
+        }
+      } catch {
+        if (!ignore) setErrorMsg('ไม่สามารถโหลดข้อมูลแดชบอร์ดได้');
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+
     loadDashboardData();
-  }, [loadDashboardData]);
+    return () => {
+      ignore = true;
+    };
+  }, [refreshKey]);
 
   // 3. จัดการการลบข้อมูล
   const confirmDelete = async () => {
@@ -102,7 +105,8 @@ export default function AdminDashboard() {
       if (res.ok || res.status === 204) {
         setSuccessMsg(`ลบข้อมูลแมลง "${deleteTarget.insectName}" สำเร็จ`);
         setDeleteTarget(null);
-        await loadDashboardData();
+        setLoading(true);
+        setRefreshKey((k) => k + 1);
       } else {
         setErrorMsg('ไม่สามารถลบข้อมูลได้ในขณะนี้');
         setDeleteTarget(null);
@@ -346,7 +350,7 @@ export default function AdminDashboard() {
                   ยืนยันการลบข้อมูลแมลง
                 </h3>
                 <p className="text-xs text-[#5A635D] mt-1 leading-relaxed">
-                  คุณต้องการลบข้อมูล <strong>"{deleteTarget.insectName}"</strong> ใช่หรือไม่? ข้อมูลนี้จะถูกลบออกจากฐานข้อมูลอย่างถาวร
+                  คุณต้องการลบข้อมูล <strong>&quot;{deleteTarget.insectName}&quot;</strong> ใช่หรือไม่? ข้อมูลนี้จะถูกลบออกจากฐานข้อมูลอย่างถาวร
                 </p>
               </div>
             </div>

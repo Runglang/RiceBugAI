@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ChevronLeft,
   Calculator,
   AlertTriangle,
   Loader2,
@@ -105,25 +104,6 @@ export default function CalculationResultPage() {
   return (
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-4xl mx-auto px-6 pt-8">
-
-        {/* Breadcrumb & Navigation */}
-        <div className="flex items-center justify-between pb-6 mb-6 border-b border-[#E3E6E4]">
-          <div className="flex items-center gap-2 text-sm text-[#5A635D]">
-            <Link href="/member/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
-            <span>/</span>
-            <Link href="/member/calculation" className="hover:text-[#1A1F1C] transition-colors">คำนวณสารเคมี</Link>
-            <span>/</span>
-            <span className="text-[#1A1F1C] font-semibold">ผลการคำนวณ</span>
-          </div>
-
-          <button
-            onClick={() => router.push('/member/calculation')}
-            className="inline-flex items-center gap-1 text-sm text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
-          >
-            <ChevronLeft size={16} />
-            <span>คำนวณใหม่</span>
-          </button>
-        </div>
 
         {/* Summary Matrix Strip */}
         <div className="bg-white border border-[#E3E6E4] rounded-lg p-5 mb-6">

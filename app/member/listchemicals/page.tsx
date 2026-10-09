@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -49,29 +49,42 @@ export default function MemberListChemicals() {
   const [chemicals, setChemicals] = useState<ChemicalDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedToxicity, setSelectedToxicity] = useState(ALL_TOXICITIES);
   const [page, setPage] = useState(1);
 
-  const fetchChemicals = useCallback(async () => {
+  const handleRetry = () => {
     setLoading(true);
     setError(null);
-    try {
-      const res = await fetch(API_BASE_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setChemicals(Array.isArray(data) ? data : []);
-    } catch {
-      setError('ไม่สามารถเชื่อมต่อกับระบบฐานข้อมูลคลังสารเคมีได้ในขณะนี้');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    setReloadKey((k) => k + 1);
+  };
 
   useEffect(() => {
+    let ignore = false;
+    const fetchChemicals = async () => {
+      try {
+        const res = await fetch(API_BASE_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!ignore) {
+          setChemicals(Array.isArray(data) ? data : []);
+          setLoading(false);
+        }
+      } catch {
+        if (!ignore) {
+          setError('ไม่สามารถเชื่อมต่อกับระบบฐานข้อมูลคลังสารเคมีได้ในขณะนี้');
+          setLoading(false);
+        }
+      }
+    };
+
     fetchChemicals();
-  }, [fetchChemicals]);
+    return () => {
+      ignore = true;
+    };
+  }, [reloadKey]);
 
   const filteredChemicals = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -156,7 +169,7 @@ export default function MemberListChemicals() {
             <AlertCircle size={24} />
             <span>{error}</span>
             <button
-              onClick={fetchChemicals}
+              onClick={handleRetry}
               className="mt-2 px-3 py-1.5 bg-white border border-[#CDD2CF] text-[#1A1F1C] rounded-md text-sm font-medium hover:bg-[#F1F3F2] transition-colors cursor-pointer"
             >
               ลองใหม่อีกครั้ง

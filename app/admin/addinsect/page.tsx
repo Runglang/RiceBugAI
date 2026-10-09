@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Upload, Save, Loader2, CheckCircle2, AlertCircle, X, ChevronLeft } from 'lucide-react';
+import { useState, useEffect, FormEvent } from 'react';
+import ImageUpload from '@/app/components/shared/ImageUpload';
+import { Save, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const API_BASE_URL = `${API_ORIGIN}/api/v1/insects`;
@@ -96,16 +95,10 @@ export default function InsectForm() {
     }));
   };
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const newFiles = Array.from(files);
+  const handleFilesAdd = (newFiles: File[]) => {
     const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
-
     setImageFiles((prev) => [...prev, ...newFiles]);
     setImagePreviews((prev) => [...prev, ...newPreviews]);
-    e.target.value = '';
   };
 
   const removeImage = (index: number) => {
@@ -194,77 +187,20 @@ export default function InsectForm() {
   return (
     <div className="space-y-6 font-sans">
 
-      {/* Navigation & Header */}
-      <div className="flex items-center justify-between pb-6 border-b border-[#E3E6E4]">
-        <div className="flex items-center gap-2 text-xs text-[#5A635D]">
-          <Link href="/admin/dashboard" className="hover:text-[#1A1F1C] transition-colors">แดชบอร์ด</Link>
-          <span>/</span>
-          <Link href="/admin/listadmininsects" className="hover:text-[#1A1F1C] transition-colors">จัดการข้อมูลแมลง</Link>
-          <span>/</span>
-          <span className="text-[#1A1F1C] font-semibold">เพิ่มทะเบียนแมลง</span>
-        </div>
-
-        <Link
-          href="/admin/listadmininsects"
-          className="inline-flex items-center gap-1.5 text-xs text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
-        >
-          <ChevronLeft size={16} />
-          <span>ย้อนกลับ</span>
-        </Link>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
 
         {/* Left Column: Image Uploader */}
         <div className="md:col-span-5 bg-white border border-[#E3E6E4] rounded-lg p-6 space-y-4">
-          <div>
-            <h2 className="text-sm font-bold text-[#1A1F1C]">ภาพตัวอย่างสัณฐานวิทยา</h2>
-            <p className="text-xs text-[#5A635D] mt-1">
-              สามารถอัปโหลดรูปภาพได้หลายรูปสำหรับฐานข้อมูล
-            </p>
-          </div>
-
-          {imagePreviews.length > 0 && (
-            <div className="grid grid-cols-2 gap-2.5">
-              {imagePreviews.map((preview, idx) => (
-                <div key={idx} className="relative aspect-square rounded-md overflow-hidden border border-[#E3E6E4] bg-[#F1F3F2] group">
-                  <Image
-                    src={preview}
-                    alt={`ตัวอย่างภาพ ${idx + 1}`}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(idx)}
-                    className="absolute top-1.5 right-1.5 p-1 bg-black/60 hover:bg-[#B42318] text-white rounded-full transition-colors cursor-pointer"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <label className="border border-dashed border-[#CDD2CF] bg-[#F7F8F7] hover:bg-[#F1F3F2] rounded-lg p-6 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group">
-            <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
-            <div className="w-10 h-10 rounded-full bg-[#F0F7F2] text-[#2D7048] border border-[#B9DBC6] flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
-              <Upload size={16} />
-            </div>
-            <p className="text-xs font-semibold text-[#1A1F1C] mb-0.5">
-              คลิกเพื่อเลือกไฟล์รูปภาพ
-            </p>
-            <p className="text-[11px] text-[#5A635D]">
-              PNG, JPG, WEBP (รองรับหลายไฟล์)
-            </p>
-          </label>
-
-          {imagePreviews.length > 0 && (
-            <p className="text-xs text-[#5A635D] text-center font-medium">
-              เลือกแล้ว {imagePreviews.length} รูป
-            </p>
-          )}
+          <ImageUpload
+            label="ภาพตัวอย่างสัณฐานวิทยา"
+            description="สามารถอัปโหลดรูปภาพได้หลายรูปสำหรับฐานข้อมูล"
+            mode="multiple"
+            selectedFiles={imageFiles}
+            previewUrls={imagePreviews}
+            onFilesAdd={handleFilesAdd}
+            onFileRemoveIndex={removeImage}
+            helperText="PNG, JPG, WEBP (รองรับหลายไฟล์)"
+          />
         </div>
 
         {/* Right Column: Taxonomy & Biological Profile */}

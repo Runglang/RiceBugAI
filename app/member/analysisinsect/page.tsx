@@ -5,21 +5,19 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Cookies from 'js-cookie';
+import ImageUpload from '@/app/components/shared/ImageUpload';
 import {
-  UploadCloud,
-  Trash2,
   CheckCircle2,
   AlertCircle,
   Loader2,
   ArrowRight,
-  Sparkles,
   Info,
-  Layers,
   MapPin,
-  ChevronRight,
   RotateCcw,
   ExternalLink,
   ShieldAlert,
+  Sparkles,
+  Layers,
 } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -85,7 +83,6 @@ function AnalysisInsectContent() {
   const [selectedStageID, setSelectedStageID] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [dragActive, setDragActive] = useState(false);
 
   // Analysis / Result State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -183,25 +180,6 @@ function AnalysisInsectContent() {
     setSelectedFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
-  };
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileChange(e.dataTransfer.files[0]);
-    }
   };
 
   const handleRemoveFile = () => {
@@ -303,12 +281,6 @@ function AnalysisInsectContent() {
     }
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
   const formatDate = (dateString?: string) => {
     if (!dateString) return '—';
     try {
@@ -327,7 +299,7 @@ function AnalysisInsectContent() {
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
 
-        {/* Breadcrumb / Section Header */}
+        {/* Header */}
         <div className="pb-6 mb-8 border-b border-[#E3E6E4] flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
@@ -640,50 +612,31 @@ function AnalysisInsectContent() {
               </div>
 
               {/* 3. Drag and Drop Image Upload Zone */}
-              <div
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-                className={`relative bg-white border-2 border-dashed rounded-xl p-8 sm:p-10 text-center transition-all ${
-                  dragActive
-                    ? 'border-[#2D7048] bg-[#E8F5EC]/40'
-                    : 'border-[#CDD2CF] hover:border-[#2D7048]/60'
-                }`}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
+              <div className="space-y-0">
+                <ImageUpload
+                  label="รูปภาพแมลงศัตรูพืช"
+                  description="อัปโหลดภาพถ่ายจากแปลงนาเพื่อส่งให้ AI ประเมินและจำแนกชนิด"
                   accept="image/jpeg,image/png,image/jpg,image/webp"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      handleFileChange(e.target.files[0]);
-                    }
-                  }}
-                  className="hidden"
+                  maxSizeBytes={5 * 1024 * 1024}
+                  helperText="รองรับไฟล์ JPG, PNG, WEBP (สูงสุด 5MB)"
+                  mode="single"
+                  selectedFile={selectedFile}
+                  previewUrl={previewUrl}
+                  onFileSelect={(file) => handleFileChange(file)}
+                  onFileRemove={handleRemoveFile}
+                  disabled={isAnalyzing}
                 />
 
-                <div className="flex flex-col items-center justify-center gap-3">
-                  <div className="w-14 h-14 rounded-full bg-[#E8F5EC] flex items-center justify-center text-[#2D7048]">
-                    <UploadCloud size={28} />
+                {/* Photography Guidelines Card (Directly attached under Upload Box) */}
+                <div className="bg-[#F8FAF8] border border-t-0 border-[#E1E6E2] rounded-b-xl p-4 space-y-2 text-xs text-[#65716A]">
+                  <div className="flex items-center gap-1.5 font-bold text-[#111813]">
+                    <ShieldAlert size={15} className="text-[#2D7048]" />
+                    <span>คำแนะนำในการถ่ายภาพเพื่อผลที่แม่นยำ</span>
                   </div>
-
-                  <div>
-                    <h3 className="text-base font-bold text-[#1A1F1C]">
-                      ลากและวางรูปภาพต้นข้าวที่นี่
-                    </h3>
-                    <p className="text-xs text-[#5A635D] mt-1">
-                      Supports JPG, PNG, WEBP (Max 5MB)
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="mt-2 inline-flex items-center justify-center px-6 h-10 rounded-md bg-[#1A1F1C] hover:bg-[#2D7048] text-white text-xs font-semibold tracking-wide transition-colors cursor-pointer"
-                  >
-                    Browse Files
-                  </button>
+                  <ul className="list-disc list-inside space-y-1 leading-relaxed text-[#4B5750]">
+                    <li>จัดให้มีแสงสว่างเพียงพอ</li>
+                    <li>หลีกเลี่ยงภาพย้อนแสงหรือภาพเบลอ</li>
+                  </ul>
                 </div>
               </div>
 
@@ -693,7 +646,7 @@ function AnalysisInsectContent() {
                   type="button"
                   onClick={handleReset}
                   disabled={isAnalyzing || (!selectedFile && !selectedStageID && !selectedFieldID)}
-                  className="px-5 h-10 text-xs font-medium text-[#5A635D] hover:text-[#1A1F1C] hover:bg-[#F1F3F2] rounded-md transition-colors disabled:opacity-40 cursor-pointer"
+                  className="px-5 h-10 text-xs font-semibold text-[#65716A] hover:text-[#111813] hover:bg-[#F1F4F2] rounded-lg transition-all disabled:opacity-40 cursor-pointer"
                 >
                   ยกเลิก
                 </button>
@@ -702,7 +655,7 @@ function AnalysisInsectContent() {
                   type="button"
                   onClick={handleAnalyze}
                   disabled={isAnalyzing || !selectedFile}
-                  className="inline-flex items-center justify-center gap-2 min-w-32 h-10 px-6 text-xs font-semibold text-white bg-[#22C55E] hover:bg-[#16A34A] rounded-md shadow-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 min-w-32 h-10 px-6 text-xs font-semibold text-white bg-[#2D7048] hover:bg-[#25593A] rounded-lg shadow-2xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isAnalyzing ? (
                     <>
@@ -710,87 +663,28 @@ function AnalysisInsectContent() {
                       <span>กำลังวิเคราะห์...</span>
                     </>
                   ) : (
-                    <span>วิเคราะห์</span>
+                    <span>วิเคราะห์แมลง</span>
                   )}
                 </button>
               </div>
 
             </div>
 
-            {/* Right Column: Selected File Preview + History + Guidelines */}
+            {/* Right Column: Recent Analysis History */}
             <div className="lg:col-span-5 space-y-6">
 
-              {/* Selected File / Image Preview Card */}
-              <div className="bg-white border border-[#E3E6E4] rounded-lg p-5">
-                <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#E3E6E4]">
-                  <h3 className="text-sm font-bold text-[#1A1F1C]">รูปภาพที่เลือก</h3>
-                  {selectedFile && (
-                    <button
-                      type="button"
-                      onClick={handleRemoveFile}
-                      className="text-xs text-[#B42318] hover:text-[#912018] flex items-center gap-1 cursor-pointer font-medium"
-                      title="ลบรูปภาพ"
-                    >
-                      <Trash2 size={13} />
-                      <span>ลบรูปภาพ</span>
-                    </button>
-                  )}
-                </div>
-
-                {selectedFile && previewUrl ? (
-                  <div className="space-y-3.5">
-                    {/* Large Image Preview */}
-                    <div className="relative w-full aspect-4/3 bg-[#F1F3F2] rounded-lg border border-[#E3E6E4] overflow-hidden">
-                      <Image
-                        src={previewUrl}
-                        alt="Selected preview"
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-
-                    {/* File Meta */}
-                    <div className="p-3 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md space-y-1.5">
-                      <div className="text-xs font-semibold text-[#1A1F1C] truncate" title={selectedFile.name}>
-                        {selectedFile.name}
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-[#5A635D]">
-                        <span>ขนาดไฟล์: {formatFileSize(selectedFile.size)}</span>
-                        <span className="inline-flex items-center gap-1 text-[#1E7B45] font-medium">
-                          <CheckCircle2 size={13} />
-                          <span>พร้อมวิเคราะห์</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-8 px-4 text-center bg-[#F7F8F7] border border-dashed border-[#CDD2CF] rounded-lg flex flex-col items-center justify-center gap-2">
-                    <div className="w-10 h-10 rounded-full bg-white border border-[#E3E6E4] flex items-center justify-center text-[#9AA29D]">
-                      <Info size={18} />
-                    </div>
-                    <div className="text-xs font-semibold text-[#1A1F1C]">
-                      ยังไม่ได้เลือกรูปภาพ
-                    </div>
-                    <p className="text-[11px] text-[#5A635D] max-w-xs leading-relaxed">
-                      กรุณาเลือกหรืออัปโหลดรูปภาพแมลงศัตรูพืชจากช่องอัปโหลดฝั่งซ้าย
-                    </p>
-                  </div>
-                )}
-              </div>
-
               {/* Recent Analysis History Card */}
-              <div className="bg-white border border-[#E3E6E4] rounded-lg p-5">
-                <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#E3E6E4]">
-                  <h3 className="text-sm font-bold text-[#1A1F1C]">ประวัติการวิเคราะห์ล่าสุด</h3>
-                  <span className="text-xs text-[#5A635D]">
+              <div className="bg-white border border-[#E1E6E2] rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+                <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#E1E6E2]">
+                  <h3 className="text-sm font-bold text-[#111813]">ประวัติการวิเคราะห์ล่าสุด</h3>
+                  <span className="text-xs text-[#65716A]">
                     {analysisHistory.length > 0 ? `${analysisHistory.length} รายการ` : ''}
                   </span>
                 </div>
 
                 <div className="space-y-2.5">
                   {analysisHistory.length > 0 ? (
-                    analysisHistory.slice(0, 5).map((item) => {
+                    analysisHistory.slice(0, 6).map((item) => {
                       const firstImg =
                         item.analysisImage ||
                         (item.insect.insectImg && item.insect.insectImg.length > 0
@@ -813,11 +707,11 @@ function AnalysisInsectContent() {
                               // ignore
                             }
                           }}
-                          className="w-full text-left group flex items-center justify-between p-2 rounded-md hover:bg-[#F7F8F7] transition-colors cursor-pointer border border-transparent hover:border-[#E3E6E4]"
+                          className="w-full text-left group flex items-center justify-between p-2.5 rounded-lg hover:bg-[#F8FAF8] transition-colors cursor-pointer border border-transparent hover:border-[#E1E6E2]"
                           title="คลิกเพื่อดูผลการวิเคราะห์นี้"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="relative w-11 h-11 rounded-md bg-[#F1F3F2] border border-[#E3E6E4] overflow-hidden shrink-0">
+                            <div className="relative w-11 h-11 rounded-lg bg-[#F1F4F2] border border-[#E1E6E2] overflow-hidden shrink-0">
                               {firstImg ? (
                                 <Image
                                   src={firstImg}
@@ -827,46 +721,34 @@ function AnalysisInsectContent() {
                                   unoptimized
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[10px] text-[#5A635D]">
+                                <div className="w-full h-full flex items-center justify-center text-[10px] text-[#65716A]">
                                   ภาพ
                                 </div>
                               )}
                             </div>
 
                             <div className="min-w-0">
-                              <div className="text-xs font-semibold text-[#1A1F1C] group-hover:text-[#2D7048] transition-colors truncate">
+                              <div className="text-xs font-semibold text-[#111813] group-hover:text-[#2D7048] transition-colors truncate">
                                 {item.insect.insectName}
                               </div>
-                              <div className="text-[11px] text-[#5A635D] truncate mt-0.5">
+                              <div className="text-[11px] text-[#65716A] truncate mt-0.5">
                                 {formatDate(item.analysisDate)}
                               </div>
                             </div>
                           </div>
 
-                          <span className="text-xs font-bold text-[#2D7048] tabular-nums shrink-0 pl-2">
+                          <span className="text-xs font-bold text-[#156E3B] tabular-nums shrink-0 pl-2">
                             {confText}
                           </span>
                         </button>
                       );
                     })
                   ) : (
-                    <div className="text-xs text-[#5A635D] text-center py-6">
+                    <div className="text-xs text-[#65716A] text-center py-8">
                       {loadingInitial ? 'กำลังโหลดประวัติ...' : 'ยังไม่มีประวัติการวิเคราะห์'}
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* Photography Guidelines Card */}
-              <div className="bg-[#F7F8F7] border border-[#E3E6E4] rounded-lg p-5 space-y-3 text-xs text-[#5A635D]">
-                <div className="flex items-center gap-2 font-bold text-[#1A1F1C]">
-                  <ShieldAlert size={16} className="text-[#2D7048]" />
-                  <span>คำแนะนำในการถ่ายภาพเพื่อผลที่แม่นยำ</span>
-                </div>
-                <ul className="list-disc list-inside space-y-1.5 leading-relaxed text-[#3F4742]">
-                  <li>จัดให้มีแสงสว่างเพียงพอ</li>
-                  <li>หลีกเลี่ยงภาพย้อนแสงหรือภาพเบลอ</li>
-                </ul>
               </div>
 
             </div>

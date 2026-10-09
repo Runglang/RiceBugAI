@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useMemo, useSyncExternalStore, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { Calculator, Loader2, ChevronLeft } from 'lucide-react';
+import { Calculator, Loader2 } from 'lucide-react';
 import Cookies from 'js-cookie';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -29,13 +28,30 @@ const EMPTY_FORM: FormData = {
   waterPerRai: '',
 };
 
+const emptySubscribe = () => () => {};
+
 function ChemicalCalculatorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const paramInsectID = searchParams.get('insectID');
   const paramFieldID = searchParams.get('fieldID');
 
-  const [memberID, setMemberID] = useState<string | null>(null);
+  const sessionCookie = useSyncExternalStore(
+    emptySubscribe,
+    () => Cookies.get('member_session') ?? null,
+    () => null
+  );
+
+  const memberID = useMemo(() => {
+    if (!sessionCookie) return null;
+    try {
+      const parsed = JSON.parse(sessionCookie);
+      return parsed.memberID ?? null;
+    } catch {
+      return null;
+    }
+  }, [sessionCookie]);
+
   const [insects, setInsects] = useState<InsectOption[]>([]);
   const [insectsLoading, setInsectsLoading] = useState(true);
   const [fieldAutoFilled, setFieldAutoFilled] = useState(false);
@@ -45,18 +61,6 @@ function ChemicalCalculatorContent() {
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [apiError, setApiError] = useState('');
   const [isCalculating, setIsCalculating] = useState(false);
-
-  useEffect(() => {
-    const session = Cookies.get('member_session');
-    if (session) {
-      try {
-        const parsed = JSON.parse(session);
-        setMemberID(parsed.memberID ?? null);
-      } catch {
-        setMemberID(null);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -225,25 +229,6 @@ function ChemicalCalculatorContent() {
   return (
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-4xl mx-auto px-6 pt-8">
-        {/* Breadcrumb & Navigation */}
-        <div className="flex items-center justify-between pb-6 mb-6 border-b border-[#E3E6E4]">
-          <div className="flex items-center gap-2 text-sm text-[#5A635D]">
-            <Link href="/member/dashboard" className="hover:text-[#1A1F1C] transition-colors">
-              แดชบอร์ด
-            </Link>
-            <span>/</span>
-            <span className="text-[#1A1F1C] font-semibold">คำนวณปริมาณสารเคมี</span>
-          </div>
-
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-1 text-sm text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
-          >
-            <ChevronLeft size={16} />
-            <span>ย้อนกลับ</span>
-          </button>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
           {/* Sidebar Info */}
           <div className="md:col-span-4 bg-white border border-[#E3E6E4] rounded-lg p-5 space-y-4">

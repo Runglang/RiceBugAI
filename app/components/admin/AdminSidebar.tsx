@@ -10,46 +10,26 @@ interface NavItem {
   href: string;
 }
 
-interface NavSection {
-  title: string;
-  items: NavItem[];
-}
-
-const navSections: NavSection[] = [
+const navItems: NavItem[] = [
   {
-    title: 'ศูนย์ควบคุม',
-    items: [
-      {
-        label: 'แดชบอร์ด',
-        href: '/admin/dashboard',
-      },
-    ],
+    label: 'แดชบอร์ด',
+    href: '/admin/dashboard',
   },
   {
-    title: 'จัดการข้อมูลแมลง',
-    items: [
-      {
-        label: 'รายการแมลงทั้งหมด',
-        href: '/admin/listadmininsects',
-      },
-      {
-        label: 'เพิ่มแมลงใหม่',
-        href: '/admin/addinsect',
-      },
-    ],
+    label: 'รายการแมลงทั้งหมด',
+    href: '/admin/listadmininsects',
   },
   {
-    title: 'จัดการข้อมูลสารเคมี',
-    items: [
-      {
-        label: 'รายการสารเคมีทั้งหมด',
-        href: '/admin/listadminchemicals',
-      },
-      {
-        label: 'เพิ่มสารเคมีใหม่',
-        href: '/admin/addchemical',
-      },
-    ],
+    label: 'เพิ่มแมลงใหม่',
+    href: '/admin/addinsect',
+  },
+  {
+    label: 'รายการสารเคมีทั้งหมด',
+    href: '/admin/listadminchemicals',
+  },
+  {
+    label: 'เพิ่มสารเคมีใหม่',
+    href: '/admin/addchemical',
   },
 ];
 
@@ -77,35 +57,23 @@ export default function AdminSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-5">
-        {navSections.map((section) => (
-          <div key={section.title}>
-            {/* Section Label */}
-            <div className="text-[13px] font-semibold text-[#5A635D] px-3 mb-1.5">
-              {section.title}
-            </div>
-
-            {/* Section Items */}
-            <div className="space-y-0.5">
-              {section.items.map((item) => {
-                const active = isActive(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center h-10 px-3 rounded-md text-[14px] font-medium transition-colors ${
-                      active
-                        ? 'bg-[#F0F7F2] text-[#1A1F1C] border-l-[3px] border-[#2D7048] font-semibold'
-                        : 'text-[#5A635D] hover:bg-[#F1F3F2] hover:text-[#1A1F1C] border-l-[3px] border-transparent'
-                    }`}
-                  >
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+        {navItems.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center h-10 px-3 rounded-md text-[14px] font-medium transition-colors ${
+                active
+                  ? 'bg-[#E8F6ED] text-[#111813] border-l-[3px] border-[#2D7048] font-semibold'
+                  : 'text-[#4B5750] hover:bg-[#F1F4F2] hover:text-[#111813] border-l-[3px] border-transparent'
+              }`}
+            >
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Logout Button */}
