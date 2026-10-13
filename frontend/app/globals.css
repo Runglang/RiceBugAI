@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #111813;
+
+  /* RiceBugAI Official Design System Tokens */
+  --color-primary-50: #F0F7F2;
+  --color-primary-100: #DCEDE2;
+  --color-primary-200: #B9DBC6;
+  --color-primary-300: #8CC2A1;
+  --color-primary-400: #5BA478;
+  --color-primary-500: #3A8A5B;
+  --color-primary-600: #2D7048;
+  --color-primary-700: #25593A;
+  --color-primary-800: #1E4730;
+  --color-primary-900: #163423;
+
+  --color-canvas: #F8FAF8;
+  --color-ink-100: #F1F4F2;
+  --color-ink-200: #E1E6E2;
+  --color-ink-300: #CBD3CE;
+  --color-ink-400: #939E97;
+  --color-ink-500: #65716A;
+  --color-ink-600: #4B5750;
+  --color-ink-700: #2D3730;
+  --color-ink-900: #111813;
+
+  --color-success-fg: #156E3B;
+  --color-success-bg: #E8F6ED;
+  --color-success-line: #B2DEC3;
+
+  --color-warning-fg: #8C4E00;
+  --color-warning-bg: #FFF5E3;
+  --color-warning-line: #EFD096;
+
+  --color-danger-fg: #B42318;
+  --color-danger-bg: #FDECEA;
+  --color-danger-line: #F4B9B3;
+
+  --color-info-fg: #1B578A;
+  --color-info-bg: #EAF3FB;
+  --color-info-line: #B5D4EE;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-ibm-plex-sans-thai), "IBM Plex Sans Thai", "Noto Sans Thai", system-ui, -apple-system, sans-serif;
+
+  --color-primary-50: var(--color-primary-50);
+  --color-primary-100: var(--color-primary-100);
+  --color-primary-200: var(--color-primary-200);
+  --color-primary-300: var(--color-primary-300);
+  --color-primary-400: var(--color-primary-400);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-600: var(--color-primary-600);
+  --color-primary-700: var(--color-primary-700);
+  --color-primary-800: var(--color-primary-800);
+  --color-primary-900: var(--color-primary-900);
+
+  --color-canvas: var(--color-canvas);
+  --color-ink-100: var(--color-ink-100);
+  --color-ink-200: var(--color-ink-200);
+  --color-ink-300: var(--color-ink-300);
+  --color-ink-400: var(--color-ink-400);
+  --color-ink-500: var(--color-ink-500);
+  --color-ink-600: var(--color-ink-600);
+  --color-ink-700: var(--color-ink-700);
+  --color-ink-900: var(--color-ink-900);
+}
+
+body {
+  background-color: #F8FAF8;
+  color: #2D3730;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Polished subtle shadows and utility styling */
+.card-subtle {
+  background-color: #FFFFFF;
+  border: 1px solid #E1E6E2;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+}
+
+.card-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover:hover {
+  border-color: #CBD3CE;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+}

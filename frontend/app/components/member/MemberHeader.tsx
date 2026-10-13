@@ -1,0 +1,92 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
+import { LogOut, User } from 'lucide-react';
+
+const navItems = [
+  { label: 'แดชบอร์ด', href: '/member/dashboard' },
+  { label: 'วิเคราะห์แมลง', href: '/member/analysisinsect' },
+  { label: 'คำนวณเคมี', href: '/member/calculation' },
+  { label: 'เพิ่มแปลงนา', href: '/member/addfield' },
+  { label: 'ข้อมูลแมลง', href: '/member/listinsects' },
+  { label: 'ข้อมูลสารเคมี', href: '/member/listchemicals' },
+];
+
+export default function MemberHeader() {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    Cookies.remove('member_session');
+    router.push('/member/login');
+  };
+
+  const isActive = (href: string) => {
+    return pathname === href || pathname.startsWith(href + '/');
+  };
+
+  return (
+    <header className="sticky top-0 z-50 w-full h-14 bg-white/95 backdrop-blur-xs border-b border-[#E1E6E2] font-sans shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      <div className="max-w-6xl mx-auto h-full flex items-center justify-between px-4 sm:px-6">
+
+        {/* Wordmark + Role Text */}
+        <div className="flex items-center gap-6">
+          <Link href="/member/dashboard" className="flex items-center gap-2 group">
+            <span className="font-bold text-lg tracking-tight text-[#111813] group-hover:text-[#2D7048] transition-colors">
+              RiceBug<span className="text-[#2D7048]">AI</span>
+            </span>
+            <span className="text-[12px] text-[#65716A] font-medium px-2 py-0.5 rounded-full bg-[#F1F4F2] border border-[#E1E6E2]">
+              สมาชิก
+            </span>
+          </Link>
+
+          {/* Navigation (Text-driven) */}
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`px-3 py-1.5 rounded-md text-[13.5px] transition-all ${
+                    active
+                      ? 'bg-[#E8F6ED] text-[#156E3B] font-semibold border border-[#B2DEC3]/60 shadow-2xs'
+                      : 'text-[#4B5750] hover:text-[#111813] hover:bg-[#F1F4F2] font-medium'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Right side */}
+        <div className="flex items-center gap-2">
+          <Link
+            href="/member/editprofile"
+            className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border transition-all ${
+              isActive('/member/editprofile')
+                ? 'bg-[#E8F6ED] text-[#156E3B] font-semibold border-[#B2DEC3]/60 shadow-2xs'
+                : 'bg-white text-[#4B5750] hover:text-[#111813] hover:bg-[#F1F4F2] border-[#CBD3CE]'
+            }`}
+          >
+            <User size={14} className="text-[#65716A]" />
+            <span>โปรไฟล์</span>
+          </Link>
+
+          <button
+            onClick={handleLogout}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#65716A] hover:text-[#B42318] hover:bg-[#FDECEA] border border-transparent hover:border-[#F4B9B3] px-3 py-1.5 rounded-md transition-all cursor-pointer"
+          >
+            <LogOut size={14} />
+            <span>ออกจากระบบ</span>
+          </button>
+        </div>
+
+      </div>
+    </header>
+  );
+}
