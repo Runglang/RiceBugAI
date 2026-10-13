@@ -1,0 +1,31 @@
+﻿# Frontend dependencies and generated files
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+/frontend/build/
+/frontend/.vercel/
+/frontend/*.tsbuildinfo
+/frontend/next-env.d.ts
+
+# Frontend secrets
+/frontend/.env
+/frontend/.env.*
+!/frontend/.env.example
+
+# Backend build output and uploaded files
+/backend/aiinsectapi/target/
+/backend/aiinsectapi/uploads/
+
+# Local environment and secret files
+**/.env
+**/.env.*
+!**/.env.example
+**/application-local.properties
+
+# Logs and operating-system files
+*.log
+.DS_Store
+Thumbs.db
+
+# Empty root lockfile (no root package.json)
+/package-lock.json
