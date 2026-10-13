@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ExternalLink,
   ScanSearch,
+  Info,
 } from 'lucide-react';
 
 interface RiceGrowthStage {
@@ -29,6 +30,13 @@ interface InsectDTO {
   scientificName?: string;
 }
 
+interface AuxiliaryResultDTO {
+  stage: string;
+  stageName: string;
+  insectName: string;
+  confidenceScore: number;
+}
+
 interface AnalysisResultDTO {
   analysisID: string;
   analysisDate: string;
@@ -38,6 +46,7 @@ interface AnalysisResultDTO {
   insect: InsectDTO;
   riceGrowthStage: RiceGrowthStage;
   fieldID?: string | null;
+  auxiliaryResults?: AuxiliaryResultDTO[] | null;
 }
 
 const emptySubscribe = () => () => {};
@@ -238,6 +247,34 @@ export default function AnalysisInsectResultPage() {
                   </div>
                 )}
               </div>
+
+              {/* Auxiliary Results (other stage predictions) */}
+              {result.auxiliaryResults && result.auxiliaryResults.length > 0 && (
+                <div className="pt-4">
+                  <div className="p-4 bg-[#F7F8F7] border border-[#E3E6E4] rounded-lg space-y-2.5">
+                    <div className="text-xs font-semibold text-[#5A635D] flex items-center gap-1.5">
+                      <Info size={13} className="text-[#5A635D]" />
+                      <span>ผลการวิเคราะห์ประกอบจากระยะอื่น</span>
+                    </div>
+                    <div className="space-y-2">
+                      {result.auxiliaryResults.map((aux: AuxiliaryResultDTO, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between text-xs p-2.5 bg-white border border-[#E3E6E4] rounded-md"
+                        >
+                          <span className="text-[#3F4742]">
+                            ภาพนี้อาจใกล้เคียงกับ <strong className="text-[#1A1F1C]">{aux.insectName}</strong>{' '}
+                            (ระยะ{aux.stageName})
+                          </span>
+                          <span className="text-[#5A635D] tabular-nums shrink-0 pl-3">
+                            {aux.confidenceScore != null ? `${aux.confidenceScore.toFixed(1)}%` : '—'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Actions */}
               <div className="pt-6 border-t border-[#E3E6E4] flex flex-wrap items-center gap-3">

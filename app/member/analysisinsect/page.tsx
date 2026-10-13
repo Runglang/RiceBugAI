@@ -54,6 +54,13 @@ interface InsectDTO {
   dangerLevel?: string;
 }
 
+interface AuxiliaryResultDTO {
+  stage: string;
+  stageName: string;
+  insectName: string;
+  confidenceScore: number;
+}
+
 interface AnalysisResultDTO {
   analysisID: string;
   analysisDate: string;
@@ -63,6 +70,7 @@ interface AnalysisResultDTO {
   insect: InsectDTO;
   riceGrowthStage: RiceGrowthStage;
   fieldID?: string | null;
+  auxiliaryResults?: AuxiliaryResultDTO[] | null;
 }
 
 // 3 stages supported by AI model (exclude 'ระยะสุกแก่')
@@ -254,9 +262,18 @@ function AnalysisInsectContent() {
           const errData = await res.json();
           if (errData?.error) {
             errText = errData.error;
+          } else if (res.status === 422) {
+            errText = 'ระบบไม่มั่นใจในผลการวิเคราะห์เพียงพอ กรุณาถ่ายภาพใหม่ให้ชัดเจนขึ้นแล้วลองอีกครั้ง';
+          } else if (res.status === 503) {
+            errText = 'ระบบ AI ยังไม่พร้อมให้บริการในขณะนี้ กรุณาลองใหม่อีกครั้งในภายหลัง';
           }
         } catch {
-          // If response not JSON
+          // If response not JSON, use status-specific fallback
+          if (res.status === 422) {
+            errText = 'ระบบไม่มั่นใจในผลการวิเคราะห์เพียงพอ กรุณาถ่ายภาพใหม่ให้ชัดเจนขึ้นแล้วลองอีกครั้ง';
+          } else if (res.status === 503) {
+            errText = 'ระบบ AI ยังไม่พร้อมให้บริการในขณะนี้ กรุณาลองใหม่อีกครั้งในภายหลัง';
+          }
         }
         throw new Error(errText);
       }
@@ -466,6 +483,34 @@ function AnalysisInsectContent() {
                       </div>
                     )}
                   </div>
+
+                  {/* Auxiliary Results (other stage predictions) */}
+                  {analysisResult.auxiliaryResults && analysisResult.auxiliaryResults.length > 0 && (
+                    <div className="pt-4">
+                      <div className="p-4 bg-[#F7F8F7] border border-[#E3E6E4] rounded-lg space-y-2.5">
+                        <div className="text-xs font-semibold text-[#5A635D] flex items-center gap-1.5">
+                          <Info size={13} className="text-[#5A635D]" />
+                          <span>ผลการวิเคราะห์ประกอบจากระยะอื่น</span>
+                        </div>
+                        <div className="space-y-2">
+                          {analysisResult.auxiliaryResults.map((aux, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between text-xs p-2.5 bg-white border border-[#E3E6E4] rounded-md"
+                            >
+                              <span className="text-[#3F4742]">
+                                ภาพนี้อาจใกล้เคียงกับ <strong className="text-[#1A1F1C]">{aux.insectName}</strong>{' '}
+                                (ระยะ{aux.stageName})
+                              </span>
+                              <span className="text-[#5A635D] tabular-nums shrink-0 pl-3">
+                                {aux.confidenceScore != null ? `${aux.confidenceScore.toFixed(1)}%` : '—'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Actions */}
                   <div className="pt-6 border-t border-[#E3E6E4] flex flex-wrap items-center gap-3">

@@ -17,6 +17,8 @@ import {
   User,
   History,
 } from 'lucide-react';
+import { useToast } from '@/app/components/shared/ToastContext';
+import ConfirmDialog from '@/app/components/shared/ConfirmDialog';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -49,6 +51,7 @@ interface RiceField {
 
 export default function MemberDashboard() {
   const router = useRouter();
+  const toast = useToast();
   const [member, setMember] = useState<MemberData | null>(null);
   const [insectCount, setInsectCount] = useState<number | null>(null);
   const [chemicalCount, setChemicalCount] = useState<number | null>(null);
@@ -57,6 +60,7 @@ export default function MemberDashboard() {
   const [fieldsLoading, setFieldsLoading] = useState(true);
   const [fieldsError, setFieldsError] = useState<string | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ fieldID: string; fieldName: string } | null>(null);
 
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -122,17 +126,18 @@ export default function MemberDashboard() {
     }
   }, [router, fetchFields]);
 
-  const handleDelete = async (fieldID: string, fieldName: string) => {
-    if (!member) return;
+  const handleDelete = (fieldID: string, fieldName: string) => {
+    if (!member || isDeletingId) return;
+    setDeleteTarget({ fieldID, fieldName });
+  };
 
-    if (!window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบแปลง "${fieldName}"?`)) {
-      return;
-    }
+  const confirmDelete = async () => {
+    if (!member || !deleteTarget) return;
 
-    setIsDeletingId(fieldID);
+    setIsDeletingId(deleteTarget.fieldID);
     try {
       const res = await fetch(
-        `${API_URL}/api/v1/members/${member.memberID}/fields/${fieldID}`,
+        `${API_URL}/api/v1/members/${member.memberID}/fields/${deleteTarget.fieldID}`,
         { method: 'DELETE' }
       );
 
@@ -140,11 +145,13 @@ export default function MemberDashboard() {
         throw new Error('ลบข้อมูลแปลงนาไม่สำเร็จ');
       }
 
-      setFields((prev) => prev.filter((f) => f.fieldID !== fieldID));
+      setFields((prev) => prev.filter((f) => f.fieldID !== deleteTarget.fieldID));
+      toast.success(`ลบข้อมูลแปลงนา "${deleteTarget.fieldName}" สำเร็จ`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการลบ');
+      toast.error(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการลบ');
     } finally {
       setIsDeletingId(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -521,6 +528,23 @@ export default function MemberDashboard() {
         </div>
 
       </div>
+
+      {/* Confirm Delete Dialog */}
+      {deleteTarget && (
+        <ConfirmDialog
+          title="ยืนยันการลบแปลงนา"
+          message={
+            <p>
+              คุณต้องการลบแปลง <strong>&quot;{deleteTarget.fieldName}&quot;</strong> ใช่หรือไม่?
+              การดำเนินการนี้ไม่สามารถย้อนกลับได้
+            </p>
+          }
+          confirmLabel="ยืนยันการลบ"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+          isLoading={isDeletingId === deleteTarget.fieldID}
+        />
+      )}
     </div>
   );
 }

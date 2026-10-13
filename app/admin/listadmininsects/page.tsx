@@ -15,6 +15,8 @@ import {
   AlertCircle,
   Filter,
 } from 'lucide-react';
+import { useToast } from '@/app/components/shared/ToastContext';
+import ConfirmDialog from '@/app/components/shared/ConfirmDialog';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const API_BASE_URL = `${API_ORIGIN}/api/v1/insects`;
@@ -48,11 +50,13 @@ const ITEMS_PER_PAGE = 8;
 
 export default function InsectManagement() {
   const router = useRouter();
+  const toast = useToast();
 
   const [insects, setInsects] = useState<InsectDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStage, setSelectedStage] = useState(ALL_STAGES);
@@ -99,21 +103,27 @@ export default function InsectManagement() {
     return () => { controller.abort(); };
   }, [doFetchInsects]);
 
-  const handleDelete = async (id: string, name: string) => {
-    const confirmed = window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลแมลง "${name}"?`);
-    if (!confirmed) return;
+  const handleDelete = (id: string, name: string) => {
+    if (deletingId) return; // prevent double-click
+    setDeleteTarget({ id, name });
+  };
 
-    setDeletingId(id);
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    setDeletingId(deleteTarget.id);
     try {
-      const res = await fetch(`${API_BASE_URL}/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE_URL}/${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         throw new Error('ไม่สามารถลบข้อมูลได้ในขณะนี้');
       }
-      setInsects((prev) => prev.filter((i) => i.insectID !== id));
+      setInsects((prev) => prev.filter((i) => i.insectID !== deleteTarget.id));
+      toast.success(`ลบข้อมูลแมลง "${deleteTarget.name}" สำเร็จ`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'ไม่สามารถลบข้อมูลได้ในขณะนี้');
+      toast.error(err instanceof Error ? err.message : 'ไม่สามารถลบข้อมูลได้ในขณะนี้');
     } finally {
       setDeletingId(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -341,6 +351,23 @@ export default function InsectManagement() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Confirm Delete Dialog */}
+      {deleteTarget && (
+        <ConfirmDialog
+          title="ยืนยันการลบข้อมูลแมลง"
+          message={
+            <p>
+              คุณต้องการลบข้อมูล <strong>&quot;{deleteTarget.name}&quot;</strong> ใช่หรือไม่?
+              การดำเนินการนี้ไม่สามารถย้อนกลับได้
+            </p>
+          }
+          confirmLabel="ยืนยันการลบ"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+          isLoading={deletingId === deleteTarget.id}
+        />
       )}
 
     </div>

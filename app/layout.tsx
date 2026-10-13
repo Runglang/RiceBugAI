@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans_Thai } from "next/font/google";
 import "./globals.css";
+import { ToastProvider } from "@/app/components/shared/ToastContext";
 
 const ibmPlexSansThai = IBM_Plex_Sans_Thai({
   subsets: ["thai", "latin"],
@@ -25,7 +26,9 @@ export default function RootLayout({
       className={`${ibmPlexSansThai.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white text-[#3F4742] font-sans">
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );
