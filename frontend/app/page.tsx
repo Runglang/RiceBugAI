@@ -42,6 +42,13 @@ export default function Home() {
               >
                 <span>ดูข้อมูลสารเคมี</span>
               </Link>
+
+              <Link
+                href="/admin/login"
+                className="w-full sm:w-auto h-11 px-6 flex items-center justify-center gap-2 bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] text-[15px] font-medium rounded-md transition-colors"
+              >
+                <span>เข้าสู่ระบบผู้ดูแล</span>
+              </Link>
             </div>
 
           </div>

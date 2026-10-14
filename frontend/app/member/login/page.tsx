@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 
@@ -46,6 +46,17 @@ export default function LoginPage() {
   return (
     <div className="min-h-[85vh] flex items-center justify-center bg-[#F7F8F7] px-4 py-12 font-sans">
       <div className="bg-white p-8 rounded-lg w-full max-w-[400px] border border-[#E3E6E4]">
+
+        {/* Back Link */}
+        <div className="mb-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs text-[#5A635D] hover:text-[#1A1F1C] transition-colors font-medium cursor-pointer"
+          >
+            <ChevronLeft size={14} />
+            <span>กลับหน้าหลัก</span>
+          </Link>
+        </div>
 
         {/* Wordmark & Header */}
         <div className="text-center mb-6">

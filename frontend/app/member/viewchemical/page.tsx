@@ -142,8 +142,8 @@ function ChemicalDetailContent() {
           {/* Main Overview Card */}
           <div className="bg-white border border-[#E3E6E4] rounded-lg p-6 grid grid-cols-1 md:grid-cols-12 gap-8">
 
-            {/* Left: Image Container */}
-            <div className="md:col-span-5 space-y-3">
+            {/* Left: Image + Target Insects */}
+            <div className="md:col-span-5 min-w-0 space-y-4">
               <div
                 onClick={() => chemical.chemicalImg && setIsImageModalOpen(true)}
                 className={`w-full h-64 bg-[#F1F3F2] rounded-md border border-[#E3E6E4] relative overflow-hidden flex items-center justify-center ${
@@ -168,51 +168,120 @@ function ChemicalDetailContent() {
                   <span className="text-sm text-[#9AA29D]">ไม่มีรูปภาพ</span>
                 )}
               </div>
+
+              {/* Target Insects (ย้ายมาไว้ใต้รูป) */}
+              <div className="bg-white border border-[#E1E6E2] rounded-xl p-4 sm:p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <h3 className="text-base font-bold text-[#111813]">
+                    แมลงเป้าหมายในการควบคุมกำจัด
+                  </h3>
+                  {chemical.targetInsects && chemical.targetInsects.length > 0 && (
+                    <span className="text-xs text-[#156E3B] font-semibold bg-[#E8F6ED] border border-[#B2DEC3] px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                      {chemical.targetInsects.length} ชนิด
+                    </span>
+                  )}
+                </div>
+
+                {!chemical.targetInsects || chemical.targetInsects.length === 0 ? (
+                  <div className="text-xs sm:text-sm text-[#65716A] py-6 text-center bg-[#F8FAF8] rounded-lg border border-[#E1E6E2]">
+                    ไม่มีการระบุแมลงเป้าหมายเฉพาะ
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {chemical.targetInsects.map((ins) => {
+                      const insectPhoto =
+                        Array.isArray(ins.insectImg) && ins.insectImg.length > 0
+                          ? ins.insectImg[0]
+                          : typeof ins.insectImg === 'string'
+                          ? ins.insectImg
+                          : null;
+
+                      return (
+                        <Link
+                          key={ins.insectID}
+                          href={`/member/viewinsect?id=${ins.insectID}`}
+                          className="group flex items-center gap-3 p-2.5 rounded-lg border border-[#E1E6E2] hover:border-[#2D7048] bg-white hover:bg-[#F8FAF8] transition-all"
+                        >
+                          <div className="w-12 h-12 rounded-md bg-[#F1F3F2] border border-[#E1E6E2] overflow-hidden relative shrink-0 flex items-center justify-center">
+                            {insectPhoto ? (
+                              <Image
+                                src={insectPhoto}
+                                alt={ins.insectName}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-200"
+                                unoptimized
+                              />
+                            ) : (
+                              <span className="text-[10px] text-[#9AA29D]">ไม่มีรูป</span>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-[#111813] group-hover:text-[#2D7048] transition-colors truncate">
+                              {ins.insectName}
+                            </div>
+                            <div className="text-xs text-[#5A635D] italic truncate">
+                              {ins.scientificName || '—'}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right: Chemical Info */}
-            <div className="md:col-span-7 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-[#5A635D] font-medium">สารเคมีป้องกันกำจัดศัตรูพืช</span>
-                  <span className={`px-2.5 py-0.5 rounded-sm border text-xs font-medium ${toxicity.className}`}>
-                    {toxicity.label}
-                  </span>
-                </div>
+            <div className="md:col-span-7 min-w-0 flex flex-col justify-between">
+              <div className="min-w-0">
 
-                <h1 className="text-2xl sm:text-3xl font-bold text-[#1A1F1C] tracking-tight">
-                  {chemical.chemicalName}
-                </h1>
-                <p className="text-sm text-[#5A635D] mt-1">
-                  สารออกฤทธิ์: <span className="text-[#1A1F1C] font-semibold">{chemical.activeIngredient || '—'}</span>
-                </p>
+                {/* ประเภท + ชื่อ + สารออกฤทธิ์ + อัตราใช้ + คุณสมบัติ (ไม่มีกรอบ) */}
+                <div className="min-w-0">
+                  <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                    <span className="text-sm text-[#5A635D] font-medium">สารเคมีป้องกันกำจัดศัตรูพืช</span>
+                    <span className={`px-2.5 py-0.5 rounded-sm border text-xs font-medium whitespace-nowrap ${toxicity.className}`}>
+                      {toxicity.label}
+                    </span>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-3 my-5 p-3.5 bg-[#F7F8F7] border border-[#E3E6E4] rounded-md">
-                  <div>
-                    <div className="text-xs text-[#5A635D]">อัตราการใช้มาตรฐาน</div>
-                    <div className="text-sm font-semibold text-[#1A1F1C] mt-0.5">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-[#1A1F1C] tracking-tight break-words [overflow-wrap:anywhere]">
+                    {chemical.chemicalName}
+                  </h1>
+                  <p className="text-sm text-[#5A635D] mt-1 break-words [overflow-wrap:anywhere]">
+                    สารออกฤทธิ์:{' '}
+                    <span className="text-[#1A1F1C] font-semibold">{chemical.activeIngredient || '—'}</span>
+                  </p>
+
+                  <div className="mt-5 min-w-0">
+                    <div className="text-sm font-semibold text-[#1A1F1C] mb-1">อัตราการใช้มาตรฐาน:</div>
+                    <p className="text-sm text-[#3F4742] leading-relaxed break-words [overflow-wrap:anywhere]">
                       {chemical.dosageRate} {chemical.dosageUnit}
-                    </div>
+                    </p>
                   </div>
-                  <div>
-                    <div className="text-xs text-[#5A635D]">คุณสมบัติการออกฤทธิ์</div>
-                    <div className="text-sm font-semibold text-[#1A1F1C] mt-0.5">{chemical.property || '—'}</div>
+
+                  <div className="mt-4 min-w-0">
+                    <div className="text-sm font-semibold text-[#1A1F1C] mb-1">คุณสมบัติการออกฤทธิ์:</div>
+                    <p className="text-sm text-[#3F4742] leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">
+                      {chemical.property || '—'}
+                    </p>
                   </div>
                 </div>
 
-                <div>
+                {/* คำอธิบาย */}
+                <div className="mt-4 min-w-0">
                   <div className="text-sm font-semibold text-[#1A1F1C] mb-1">คำอธิบายและลักษณะการใช้:</div>
-                  <p className="text-sm text-[#3F4742] leading-relaxed whitespace-pre-line">
+                  <p className="text-sm text-[#3F4742] leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">
                     {chemical.description || chemical.usageMethod || 'ไม่มีข้อมูลคำอธิบายเพิ่มเติม'}
                   </p>
                 </div>
               </div>
 
-              <div className="pt-4 mt-6 border-t border-[#E3E6E4] flex items-center justify-between text-xs text-[#5A635D]">
+              <div className="pt-4 mt-6 border-t border-[#E3E6E4] flex items-center justify-between gap-3 text-xs text-[#5A635D]">
                 <span>ข้อมูลตามทะเบียนสารป้องกันกำจัดศัตรูพืช</span>
                 <Link
                   href="/member/calculation"
-                  className="text-[#2D7048] hover:text-[#25593A] font-medium inline-flex items-center gap-1"
+                  className="text-[#2D7048] hover:text-[#25593A] font-medium inline-flex items-center gap-1 shrink-0"
                 >
                   <span>คำนวณปริมาณยาตามแปลงนา</span>
                   <ArrowRight size={13} />
@@ -223,85 +292,19 @@ function ChemicalDetailContent() {
           </div>
 
           {/* Warnings & Safety Notice */}
-          <div className="bg-[#FFF4E0] border border-[#F0D29A] rounded-lg p-5 flex flex-col justify-between text-[#8A5300]">
-            <div>
-              <div className="flex items-center gap-2 mb-2 font-semibold text-sm">
-                <AlertTriangle size={18} className="text-[#8A5300] shrink-0" />
-                <span>ข้อควรระวังและความปลอดภัย</span>
-              </div>
-
-              <p className="text-sm leading-relaxed whitespace-pre-line mt-1">
-                {chemical.warning || 'สวมอุปกรณ์ป้องกันอันตรายส่วนบุคคล (PPE) ทุกครั้งขณะผสมและพ่นสารเคมี และเว้นระยะเก็บเกี่ยวตามคำแนะนำบนฉลาก'}
-              </p>
+          <div className="bg-[#FFF4E0] border border-[#F0D29A] rounded-lg p-5 text-[#8A5300] min-w-0">
+            <div className="flex items-center gap-2 mb-2 font-semibold text-sm">
+              <AlertTriangle size={18} className="text-[#8A5300] shrink-0" />
+              <span>ข้อควรระวังและความปลอดภัย</span>
             </div>
+
+            <p className="text-sm leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere] mt-1">
+              {chemical.warning || 'สวมอุปกรณ์ป้องกันอันตรายส่วนบุคคล (PPE) ทุกครั้งขณะผสมและพ่นสารเคมี และเว้นระยะเก็บเกี่ยวตามคำแนะนำบนฉลาก'}
+            </p>
 
             <div className="mt-4 pt-3 border-t border-[#F0D29A] text-xs">
               ปฏิบัติตามคำเตือนบนฉลากผลิตภัณฑ์อย่างเคร่งครัด
             </div>
-          </div>
-
-          {/* Target Insects Section */}
-          <div className="bg-white border border-[#E1E6E2] rounded-xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-[#111813]">
-                แมลงเป้าหมายในการควบคุมกำจัด
-              </h3>
-              {chemical.targetInsects && chemical.targetInsects.length > 0 && (
-                <span className="text-xs text-[#156E3B] font-semibold bg-[#E8F6ED] border border-[#B2DEC3] px-2.5 py-0.5 rounded-full">
-                  {chemical.targetInsects.length} ชนิด
-                </span>
-              )}
-            </div>
-
-            {!chemical.targetInsects || chemical.targetInsects.length === 0 ? (
-              <div className="text-xs sm:text-sm text-[#65716A] py-6 text-center bg-[#F8FAF8] rounded-lg border border-[#E1E6E2]">
-                ไม่มีการระบุแมลงเป้าหมายเฉพาะ
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-                {chemical.targetInsects.map((ins) => {
-                  const insectPhoto =
-                    Array.isArray(ins.insectImg) && ins.insectImg.length > 0
-                      ? ins.insectImg[0]
-                      : typeof ins.insectImg === 'string'
-                      ? ins.insectImg
-                      : null;
-
-                  return (
-                    <Link
-                      key={ins.insectID}
-                      href={`/member/viewinsect?id=${ins.insectID}`}
-                      className="group relative h-36 sm:h-40 max-w-full rounded-xl overflow-hidden border border-[#E1E6E2] hover:border-[#2D7048] shadow-2xs hover:shadow-md transition-all flex flex-col justify-end p-3.5 bg-[#2D3730] shrink-0"
-                    >
-                      {/* Background Photo */}
-                      {insectPhoto ? (
-                        <Image
-                          src={insectPhoto}
-                          alt={ins.insectName}
-                          fill
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          className="object-cover object-center max-w-full max-h-full transition-transform duration-500 group-hover:scale-105"
-                          unoptimized
-                        />
-                      ) : null}
-
-                      {/* Dark Gradient Overlay for readability */}
-                      <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/45 to-black/10 group-hover:from-black/95 group-hover:via-black/55 transition-colors pointer-events-none" />
-
-                      {/* Bottom Info */}
-                      <div className="relative z-10 space-y-0.5 max-w-full">
-                        <div className="text-sm sm:text-base font-bold text-white group-hover:text-[#A7F3D0] transition-colors leading-snug truncate drop-shadow-sm">
-                          {ins.insectName}
-                        </div>
-                        <div className="text-xs text-white/80 italic truncate font-normal">
-                          {ins.scientificName || '—'}
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
           </div>
 
         </div>

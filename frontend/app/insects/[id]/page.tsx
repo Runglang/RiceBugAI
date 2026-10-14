@@ -112,53 +112,8 @@ export default function GuestInsectDetailPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-6">
-
-            {/* 1. Rice Growth Stages Affected Section (PROMINENT AT TOP) */}
-            <div className="bg-white border border-[#E1E6E2] rounded-xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-base font-bold text-[#111813]">
-                  ระยะการเจริญเติบโตของข้าวที่ถูกเข้าทำลาย
-                </h2>
-                {insect.riceGrowthStages && insect.riceGrowthStages.length > 0 && (
-                  <span className="text-xs text-[#156E3B] font-semibold bg-[#E8F6ED] border border-[#B2DEC3] px-2.5 py-0.5 rounded-full">
-                    พบใน {insect.riceGrowthStages.length} ระยะ
-                  </span>
-                )}
-              </div>
-
-              {!insect.riceGrowthStages || insect.riceGrowthStages.length === 0 ? (
-                <div className="text-xs sm:text-sm text-[#65716A] py-3 text-center bg-[#F8FAF8] rounded-lg border border-[#E1E6E2]">
-                  ไม่มีการระบุระยะการเจริญเติบโตที่เฉพาะเจาะจง (สามารถเข้าทำลายได้ทุกระยะ)
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {insect.riceGrowthStages.map((st) => (
-                    <div
-                      key={st.stageID || st.stageName}
-                      className="p-3.5 bg-[#F8FAF8] border border-[#E1E6E2] hover:border-[#B2DEC3] rounded-lg transition-colors"
-                    >
-                      <div className="flex items-center justify-between text-sm font-bold text-[#111813] mb-1">
-                        <span>{st.stageName}</span>
-                        {st.durationRange && (
-                          <span className="text-xs bg-white px-2 py-0.5 rounded text-[#4B5750] font-medium border border-[#E1E6E2]">
-                            {st.durationRange}
-                          </span>
-                        )}
-                      </div>
-                      {st.stageDes && (
-                        <p className="text-xs text-[#65716A] leading-relaxed mt-1">
-                          {st.stageDes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 2. Specimen Details Card */}
-            <div className="bg-white border border-[#E1E6E2] rounded-xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">
+          /* Specimen Details Card */
+          <div className="bg-white border border-[#E1E6E2] rounded-xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">
 
               {/* Left: Specimen Gallery */}
               <div className="md:col-span-5 space-y-3">
@@ -245,6 +200,24 @@ export default function GuestInsectDetailPage() {
                     </div>
                   </div>
 
+                  <div className="mb-4">
+                    <div className="text-sm font-semibold text-[#111813] mb-1.5">ระยะข้าวที่ถูกเข้าทำลาย:</div>
+                    {insect.riceGrowthStages && insect.riceGrowthStages.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {insect.riceGrowthStages.map((st) => (
+                          <span
+                            key={st.stageID || st.stageName}
+                            className="inline-flex items-center text-xs font-semibold bg-[#E8F6ED] text-[#156E3B] border border-[#B2DEC3] px-2.5 py-1 rounded-md"
+                          >
+                            {st.stageName}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs sm:text-sm text-[#65716A]">ไม่ระบุระยะ</span>
+                    )}
+                  </div>
+
                   <div>
                     <div className="text-sm font-semibold text-[#111813] mb-1.5">ลักษณะและพฤติกรรมการทำลาย:</div>
                     <p className="text-xs sm:text-sm text-[#4B5750] leading-relaxed whitespace-pre-line">
@@ -266,8 +239,6 @@ export default function GuestInsectDetailPage() {
               </div>
 
             </div>
-
-          </div>
         )}
 
       </main>

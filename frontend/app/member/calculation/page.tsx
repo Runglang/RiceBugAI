@@ -228,40 +228,9 @@ function ChemicalCalculatorContent() {
 
   return (
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
-      <div className="max-w-4xl mx-auto px-6 pt-8">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-          {/* Sidebar Info */}
-          <div className="md:col-span-4 bg-white border border-[#E3E6E4] rounded-lg p-5 space-y-4">
-            <h2 className="text-sm font-bold text-[#1A1F1C]">หลักการคำนวณปริมาณสารเคมี</h2>
-            <p className="text-xs text-[#5A635D] leading-relaxed">
-              ระบบจะอิงตามอัตราการใช้สารเคมีที่ขึ้นทะเบียนต่อพื้นที่ 1 ไร่ เพื่อป้องกันปัญหาการสะสมสารพิษเกินขนาด
-              หรือการดื้อยาของแมลงศัตรูพืช
-            </p>
-
-            <div className="pt-3 border-t border-[#E3E6E4] space-y-2.5 text-xs text-[#3F4742]">
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#E8F5EC] text-[#1E7B45] text-[11px] font-bold flex items-center justify-center shrink-0">
-                  1
-                </span>
-                <span>ระบุแมลงศัตรูพืชที่ตรวจพบ</span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#E8F5EC] text-[#1E7B45] text-[11px] font-bold flex items-center justify-center shrink-0">
-                  2
-                </span>
-                <span>ระบุขนาดพื้นที่ระบาดจริง</span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-[#E8F5EC] text-[#1E7B45] text-[11px] font-bold flex items-center justify-center shrink-0">
-                  3
-                </span>
-                <span>รับสูตรผสมและปริมาณน้ำที่ต้องใช้</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Form Container */}
-          <div className="md:col-span-8 bg-white border border-[#E3E6E4] rounded-lg p-6 sm:p-7">
+      <div className="max-w-2xl mx-auto px-6 pt-8">
+        {/* Form Container */}
+        <div className="bg-white border border-[#E3E6E4] rounded-lg p-6 sm:p-8">
             <div className="mb-6">
               <h1 className="text-xl font-bold tracking-tight text-[#1A1F1C]">
                 คำนวณปริมาณสารเคมีและอัตราผสม
@@ -420,7 +389,6 @@ function ChemicalCalculatorContent() {
               </div>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );

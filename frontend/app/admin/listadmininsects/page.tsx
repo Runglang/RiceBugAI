@@ -45,7 +45,7 @@ const DANGER_BADGE: Record<string, { label: string; className: string }> = {
   low: { label: 'ระดับต่ำ', className: 'bg-[#E8F5EC] text-[#1E7B45] border-[#B7DFC6]' },
 };
 
-const ALL_STAGES = 'ทุกระยะการเจริญเติบโต';
+const ALL_STAGES = 'ทุกระยะการเติบโต';
 const ITEMS_PER_PAGE = 8;
 
 export default function InsectManagement() {
@@ -134,7 +134,7 @@ export default function InsectManagement() {
         if (stage.stageName) stageNames.add(stage.stageName.trim());
       });
     });
-    return [ALL_STAGES, ...Array.from(stageNames).sort()];
+    return [ALL_STAGES, ...Array.from(stageNames)];
   }, [insects]);
 
   const filteredInsects = useMemo(() => {
@@ -190,7 +190,7 @@ export default function InsectManagement() {
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9AA29D]" />
           <input
             type="text"
-            placeholder="ค้นหาชื่อแมลง, ชื่อวิทยาศาสตร์, ประเภท..."
+            placeholder="ค้นหาชื่อแมลง หรือชื่อวิทยาศาสตร์..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -223,7 +223,7 @@ export default function InsectManagement() {
       {loading ? (
         <div className="py-20 text-center flex flex-col items-center justify-center gap-2 text-sm text-[#5A635D]">
           <Loader2 className="animate-spin text-[#2D7048]" size={24} />
-          <span>กำลังโหลดข้อมูลทะเบียนแมลง...</span>
+          <span>กำลังโหลดข้อมูลสารานุกรมแมลง...</span>
         </div>
       ) : error ? (
         <div className="py-12 text-center bg-[#FDECEA] border border-[#F4B9B3] rounded-lg p-6 text-sm text-[#B42318] flex flex-col items-center gap-2">
@@ -231,19 +231,19 @@ export default function InsectManagement() {
           <span>{error}</span>
           <button
             onClick={fetchInsects}
-            className="mt-2 px-4 py-2 bg-white border border-[#CDD2CF] hover:bg-[#F1F3F2] text-[#1A1F1C] rounded-md text-sm font-medium transition-colors cursor-pointer"
+            className="mt-2 px-3 py-1.5 bg-white border border-[#CDD2CF] hover:bg-[#F1F3F2] text-[#1A1F1C] rounded-md text-sm font-medium transition-colors cursor-pointer"
           >
             ลองใหม่อีกครั้ง
           </button>
         </div>
       ) : filteredInsects.length === 0 ? (
         <div className="py-16 text-center bg-white border border-[#E3E6E4] rounded-lg p-8 text-sm text-[#5A635D]">
-          ไม่พบข้อมูลแมลงในระบบ
+          ไม่พบข้อมูลแมลงที่ตรงกับเงื่อนไขการค้นหา
         </div>
       ) : (
         <div>
           {/* Insect Grid (4 Columns) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
             {pagedInsects.map((insect) => {
               const danger = DANGER_BADGE[insect.dangerLevel?.toLowerCase()] || {
                 label: insect.dangerLevel || 'ทั่วไป',
@@ -255,12 +255,14 @@ export default function InsectManagement() {
               return (
                 <div
                   key={insect.insectID}
-                  className="bg-white border border-[#E3E6E4] rounded-lg p-4 flex flex-col justify-between hover:border-[#CDD2CF] transition-all"
+                  className="bg-white hover:border-[#CDD2CF] hover:shadow-xs border border-[#E3E6E4] rounded-lg p-4 flex flex-col justify-between transition-all duration-150"
                 >
                   <div>
                     {/* Top Bar */}
                     <div className="flex items-center justify-between text-xs mb-3">
-                      <span className="text-[13px] font-medium text-[#5A635D]">{insect.insectType || 'แมลงศัตรูข้าว'}</span>
+                      <span className="text-[13px] font-medium text-[#5A635D]">
+                        {insect.insectType || 'แมลงศัตรูข้าว'}
+                      </span>
                       <span className={`px-2 py-0.5 rounded-sm border text-xs font-medium ${danger.className}`}>
                         {danger.label}
                       </span>
@@ -289,6 +291,7 @@ export default function InsectManagement() {
                       {insect.scientificName || '—'}
                     </p>
 
+                    {/* Description */}
                     <p className="text-xs text-[#3F4742] line-clamp-2 mt-2 leading-relaxed">
                       {insect.insectDes || 'ไม่มีคำอธิบายเพิ่มเติม'}
                     </p>
@@ -300,7 +303,7 @@ export default function InsectManagement() {
                       {insect.riceGrowthStages?.map((s) => s.stageName).join(', ') || 'ทุกระยะ'}
                     </span>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={() => router.push(`/admin/editinsect?insectId=${insect.insectID}`)}
                         className="p-1.5 rounded-md bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] transition-colors cursor-pointer"
@@ -328,26 +331,31 @@ export default function InsectManagement() {
             })}
           </div>
 
-          {/* Pagination */}
+          {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-4 border-t border-[#E3E6E4]">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={currentPageSafe === 1}
-                className="p-2 bg-white hover:bg-[#F1F3F2] disabled:opacity-40 border border-[#CDD2CF] rounded-md text-[#1A1F1C] transition-colors cursor-pointer"
-              >
-                <ChevronLeft size={15} />
-              </button>
-              <span className="text-xs font-medium text-[#5A635D] px-3">
-                หน้า {currentPageSafe} จาก {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPageSafe === totalPages}
-                className="p-2 bg-white hover:bg-[#F1F3F2] disabled:opacity-40 border border-[#CDD2CF] rounded-md text-[#1A1F1C] transition-colors cursor-pointer"
-              >
-                <ChevronRight size={15} />
-              </button>
+            <div className="flex items-center justify-between pt-4 border-t border-[#E3E6E4] text-sm text-[#5A635D]">
+              <div>
+                แสดง {(currentPageSafe - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPageSafe * ITEMS_PER_PAGE, filteredInsects.length)} จาก {filteredInsects.length} รายการ
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPageSafe === 1}
+                  className="p-2 bg-white hover:bg-[#F1F3F2] disabled:opacity-40 border border-[#CDD2CF] rounded-md text-[#1A1F1C] transition-colors cursor-pointer"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-xs font-medium text-[#1A1F1C] px-2">
+                  {currentPageSafe} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPageSafe === totalPages}
+                  className="p-2 bg-white hover:bg-[#F1F3F2] disabled:opacity-40 border border-[#CDD2CF] rounded-md text-[#1A1F1C] transition-colors cursor-pointer"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
             </div>
           )}
         </div>

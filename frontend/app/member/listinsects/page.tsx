@@ -35,9 +35,9 @@ interface InsectDTO {
 }
 
 const DANGER_BADGE: Record<string, { label: string; className: string }> = {
-  high: { label: 'อันตรายสูง', className: 'bg-[#FDECEA] text-[#B42318] border-[#F4B9B3]' },
+  high: { label: 'ระดับสูง', className: 'bg-[#FDECEA] text-[#B42318] border-[#F4B9B3]' },
   medium: { label: 'ปานกลาง', className: 'bg-[#FFF4E0] text-[#8A5300] border-[#F0D29A]' },
-  low: { label: 'อันตรายต่ำ', className: 'bg-[#E8F5EC] text-[#1E7B45] border-[#B7DFC6]' },
+  low: { label: 'ระดับต่ำ', className: 'bg-[#E8F5EC] text-[#1E7B45] border-[#B7DFC6]' },
 };
 
 const ALL_STAGES = 'ทุกระยะการเติบโต';
@@ -208,17 +208,17 @@ export default function MemberListInsects() {
                     className="group bg-white hover:border-[#CDD2CF] hover:shadow-xs border border-[#E3E6E4] rounded-lg p-4 flex flex-col justify-between transition-all duration-150"
                   >
                     <div>
-                      {/* Card Header */}
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[13px] text-[#5A635D] font-medium">
-                          {insect.insectType || 'ศัตรูข้าว'}
+                      {/* Top Bar */}
+                      <div className="flex items-center justify-between text-xs mb-3">
+                        <span className="text-[13px] font-medium text-[#5A635D]">
+                          {insect.insectType || 'แมลงศัตรูข้าว'}
                         </span>
                         <span className={`px-2 py-0.5 rounded-sm border text-xs font-medium ${danger.className}`}>
                           {danger.label}
                         </span>
                       </div>
 
-                      {/* Image Container */}
+                      {/* Image */}
                       <div className="w-full h-36 bg-[#F1F3F2] rounded-md border border-[#E3E6E4] overflow-hidden mb-3 relative flex items-center justify-center">
                         {firstImg ? (
                           <Image
@@ -233,7 +233,7 @@ export default function MemberListInsects() {
                         )}
                       </div>
 
-                      {/* Title & Taxonomy */}
+                      {/* Title */}
                       <h3 className="text-[15px] font-semibold text-[#1A1F1C] group-hover:text-[#2D7048] transition-colors leading-snug">
                         {insect.insectName}
                       </h3>
@@ -241,19 +241,22 @@ export default function MemberListInsects() {
                         {insect.scientificName || '—'}
                       </p>
 
-                      <div className="mt-2.5 pt-2.5 border-t border-[#E3E6E4] text-xs text-[#5A635D] space-y-1">
-                        <div className="truncate">
-                          <span className="text-[#9AA29D]">ระยะข้าว: </span>
-                          <span>
-                            {insect.riceGrowthStages?.map((s) => s.stageName).join(', ') || 'ทุกระยะ'}
-                          </span>
-                        </div>
-                      </div>
+                      {/* Description */}
+                      <p className="text-xs text-[#3F4742] line-clamp-2 mt-2 leading-relaxed">
+                        {insect.insectDes || 'ไม่มีคำอธิบายเพิ่มเติม'}
+                      </p>
                     </div>
 
-                    <div className="mt-4 pt-2.5 border-t border-[#E3E6E4] flex items-center justify-between text-xs text-[#2D7048] font-medium">
-                      <span>ดูรายละเอียด</span>
-                      <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                    {/* Actions & Meta */}
+                    <div className="mt-4 pt-3 border-t border-[#E3E6E4] flex items-center justify-between">
+                      <span className="text-xs text-[#5A635D] truncate max-w-[120px]">
+                        {insect.riceGrowthStages?.map((s) => s.stageName).join(', ') || 'ทุกระยะ'}
+                      </span>
+
+                      <div className="flex items-center gap-1 text-xs text-[#2D7048] font-medium group-hover:text-[#25593A] transition-colors shrink-0">
+                        <span>ดูรายละเอียด</span>
+                        <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                      </div>
                     </div>
                   </Link>
                 );

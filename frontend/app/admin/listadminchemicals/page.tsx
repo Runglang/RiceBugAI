@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, Pencil, Trash2, Loader2, AlertCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, AlertCircle, Search, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import { useToast } from '@/app/components/shared/ToastContext';
 import ConfirmDialog from '@/app/components/shared/ConfirmDialog';
 
@@ -37,6 +37,18 @@ const TOXICITY_BADGE: Record<string, { label: string; className: string }> = {
   low: { label: 'ระดับต่ำ', className: 'bg-[#E8F5EC] text-[#1E7B45] border-[#B7DFC6]' },
 };
 
+const ALL_TOXICITIES = 'ระดับความเป็นพิษทั้งหมด';
+const ALL_USAGE_METHODS = 'วิธีการใช้งานทั้งหมด';
+
+const USAGE_METHOD_LABELS: Record<string, string> = {
+  foliar_spray: 'พ่นทางใบ',
+  broadcast: 'หว่าน/โรยเม็ด',
+};
+
+const getUsageMethodLabel = (method: string) => {
+  return USAGE_METHOD_LABELS[method.toLowerCase()] || method;
+};
+
 const ROWS_PER_PAGE = 8;
 
 export default function ChemicalManagement() {
@@ -49,6 +61,8 @@ export default function ChemicalManagement() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedToxicity, setSelectedToxicity] = useState(ALL_TOXICITIES);
+  const [selectedUsageMethod, setSelectedUsageMethod] = useState(ALL_USAGE_METHODS);
   const [page, setPage] = useState(1);
 
   const doFetchChemicals = useCallback(async (signal?: AbortSignal): Promise<ChemicalDTO[]> => {
@@ -122,16 +136,64 @@ export default function ChemicalManagement() {
     }
   };
 
+  const usageMethodOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: { value: string; label: string }[] = [
+      { value: ALL_USAGE_METHODS, label: ALL_USAGE_METHODS },
+    ];
+
+    chemicals.forEach((chem) => {
+      const raw = chem.usageMethod?.trim();
+      if (!raw) return;
+      const label = getUsageMethodLabel(raw);
+      if (!seen.has(label)) {
+        seen.add(label);
+        options.push({ value: raw, label });
+      }
+    });
+
+    if (seen.size === 0) {
+      options.push(
+        { value: 'foliar_spray', label: 'พ่นทางใบ' },
+        { value: 'broadcast', label: 'หว่าน/โรยเม็ด' }
+      );
+    }
+
+    return options;
+  }, [chemicals]);
+
   const filteredChemicals = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-    if (!term) return chemicals;
-    return chemicals.filter(
-      (c) =>
-        c.chemicalName?.toLowerCase().includes(term) ||
-        c.activeIngredient?.toLowerCase().includes(term) ||
-        c.property?.toLowerCase().includes(term)
-    );
-  }, [chemicals, searchTerm]);
+    return chemicals.filter((chem) => {
+      const matchSearch =
+        !term ||
+        chem.chemicalName?.toLowerCase().includes(term) ||
+        chem.activeIngredient?.toLowerCase().includes(term) ||
+        chem.property?.toLowerCase().includes(term) ||
+        chem.usageMethod?.toLowerCase().includes(term) ||
+        chem.targetInsects?.some((ins) => ins.insectName?.toLowerCase().includes(term));
+
+      const chemTox = chem.toxicityLevel?.toLowerCase() || '';
+      const matchToxicity =
+        selectedToxicity === ALL_TOXICITIES ||
+        chemTox === selectedToxicity.toLowerCase() ||
+        (selectedToxicity === 'low' && chemTox.includes('ต่ำ')) ||
+        (selectedToxicity === 'medium' && chemTox.includes('กลาง')) ||
+        (selectedToxicity === 'high' && chemTox.includes('สูง'));
+
+      const chemUsage = chem.usageMethod?.trim().toLowerCase() || '';
+      const selectedUsage = selectedUsageMethod.trim().toLowerCase();
+      const matchUsageMethod =
+        selectedUsageMethod === ALL_USAGE_METHODS ||
+        chemUsage === selectedUsage ||
+        (selectedUsage === 'foliar_spray' && (chemUsage.includes('foliar') || chemUsage.includes('พ่น'))) ||
+        (selectedUsage === 'broadcast' && (chemUsage.includes('broadcast') || chemUsage.includes('หว่าน') || chemUsage.includes('โรย'))) ||
+        (selectedUsage.includes('พ่น') && (chemUsage.includes('foliar') || chemUsage.includes('พ่น'))) ||
+        (selectedUsage.includes('หว่าน') && (chemUsage.includes('broadcast') || chemUsage.includes('หว่าน') || chemUsage.includes('โรย')));
+
+      return matchSearch && matchToxicity && matchUsageMethod;
+    });
+  }, [chemicals, searchTerm, selectedToxicity, selectedUsageMethod]);
 
   const totalPages = Math.max(1, Math.ceil(filteredChemicals.length / ROWS_PER_PAGE));
   const currentPageSafe = Math.min(page, totalPages);
@@ -163,7 +225,7 @@ export default function ChemicalManagement() {
         </Link>
       </div>
 
-      {/* Search Filter */}
+      {/* Search & Filter Matrix */}
       <div className="bg-white border border-[#E3E6E4] rounded-lg p-4 flex flex-col md:flex-row gap-3 items-center justify-between">
         <div className="relative w-full md:w-80">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9AA29D]" />
@@ -179,9 +241,43 @@ export default function ChemicalManagement() {
           />
         </div>
 
-        <span className="text-xs font-medium text-[#5A635D]">
-          ทั้งหมด {filteredChemicals.length} รายการ
-        </span>
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <SlidersHorizontal size={14} className="text-[#5A635D] shrink-0" />
+            <select
+              value={selectedToxicity}
+              onChange={(e) => {
+                setSelectedToxicity(e.target.value);
+                setPage(1);
+              }}
+              className="w-full sm:w-auto px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-sm text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] cursor-pointer"
+            >
+              <option value={ALL_TOXICITIES}>{ALL_TOXICITIES}</option>
+              <option value="low">ระดับต่ำ</option>
+              <option value="medium">ปานกลาง</option>
+              <option value="high">ระดับสูง</option>
+            </select>
+          </div>
+
+          <select
+            value={selectedUsageMethod}
+            onChange={(e) => {
+              setSelectedUsageMethod(e.target.value);
+              setPage(1);
+            }}
+            className="w-full sm:w-auto px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-sm text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] cursor-pointer"
+          >
+            {usageMethodOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+          <span className="text-xs font-medium text-[#5A635D] whitespace-nowrap">
+            ทั้งหมด {filteredChemicals.length} รายการ
+          </span>
+        </div>
       </div>
 
       {/* States */}
@@ -212,7 +308,7 @@ export default function ChemicalManagement() {
               <thead>
                 <tr className="border-b border-[#E3E6E4] bg-[#F7F8F7] text-xs font-semibold text-[#5A635D]">
                   <th className="py-3 px-4 w-20">ภาพ</th>
-                  <th className="py-3 px-4">ชื่อสารเคมี / สรรพคุณ</th>
+                  <th className="py-3 px-4">ชื่อสารเคมี</th>
                   <th className="py-3 px-4">สารออกฤทธิ์</th>
                   <th className="py-3 px-4">อัตราการใช้</th>
                   <th className="py-3 px-4">ระดับความเป็นพิษ</th>
@@ -246,21 +342,18 @@ export default function ChemicalManagement() {
 
                       <td className="py-3 px-4">
                         <div className="font-bold text-[#1A1F1C]">{chemical.chemicalName}</div>
-                        {chemical.property && (
-                          <div className="text-xs text-[#5A635D] mt-0.5 line-clamp-1">{chemical.property}</div>
-                        )}
                       </td>
 
                       <td className="py-3 px-4 italic text-[#5A635D]">
                         {chemical.activeIngredient || '—'}
                       </td>
 
-                      <td className="py-3 px-4 font-semibold text-[#1A1F1C]">
+                      <td className="py-3 px-4 font-semibold text-[#1A1F1C] whitespace-nowrap">
                         {chemical.dosageRate} {chemical.dosageUnit}
                       </td>
 
                       <td className="py-3 px-4">
-                        <span className={`inline-block px-2 py-0.5 rounded-sm text-[11px] font-medium border ${tox.className}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-sm text-[11px] font-medium border whitespace-nowrap ${tox.className}`}>
                           {tox.label}
                         </span>
                       </td>
