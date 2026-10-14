@@ -168,6 +168,12 @@ function AnalysisInsectContent() {
     return fields.find((f) => f.fieldID === selectedFieldID) || null;
   }, [fields, selectedFieldID]);
 
+  // Field derived from analysisResult.fieldID (for result view)
+  const analysisResultField = useMemo(() => {
+    if (!analysisResult?.fieldID) return null;
+    return fields.find((f) => f.fieldID === analysisResult.fieldID) || null;
+  }, [fields, analysisResult]);
+
   // File Handlers
   const handleFileChange = (file: File | null) => {
     setErrorMessage(null);
@@ -446,13 +452,21 @@ function AnalysisInsectContent() {
                           <span>แปลงนาข้าว</span>
                         </div>
                         <div className="text-sm font-semibold text-[#1A1F1C]">
-                          {currentSelectedField
-                            ? currentSelectedField.fieldName
-                            : 'ไม่ได้ระบุแปลง (ระบุระยะด้วยตนเอง)'}
+                          {(() => {
+                            if (!analysisResult.fieldID) {
+                              return 'ไม่ได้ระบุแปลง (ระบุระยะด้วยตนเอง)';
+                            }
+                            if (loadingInitial) {
+                              return 'กำลังโหลดข้อมูลแปลง...';
+                            }
+                            return analysisResultField
+                              ? analysisResultField.fieldName
+                              : 'ไม่พบข้อมูลแปลง';
+                          })()}
                         </div>
-                        {currentSelectedField && (
+                        {analysisResult.fieldID && !loadingInitial && analysisResultField && (
                           <div className="text-xs text-[#5A635D] mt-0.5">
-                            อายุข้าว {currentSelectedField.riceAge} วัน
+                            อายุข้าว {analysisResultField.riceAge} วัน
                           </div>
                         )}
                       </div>
@@ -522,13 +536,23 @@ function AnalysisInsectContent() {
                       <ArrowRight size={16} />
                     </Link>
 
-                    <Link
-                      href={`/member/calculation?insectID=${analysisResult.insect.insectID}`}
-                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] text-sm font-medium transition-colors"
-                    >
-                      <span>คำนวณสารเคมีสำหรับแมลงนี้</span>
-                      <ExternalLink size={15} />
-                    </Link>
+                    {(() => {
+                      const params = new URLSearchParams();
+                      params.set('insectID', analysisResult.insect.insectID);
+                      if (analysisResult.fieldID) {
+                        params.set('fieldID', analysisResult.fieldID);
+                      }
+                      params.set('source', 'analysis');
+                      return (
+                        <Link
+                          href={`/member/calculation?${params.toString()}`}
+                          className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] text-sm font-medium transition-colors"
+                        >
+                          <span>คำนวณสารเคมีสำหรับแมลงนี้</span>
+                          <ExternalLink size={15} />
+                        </Link>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

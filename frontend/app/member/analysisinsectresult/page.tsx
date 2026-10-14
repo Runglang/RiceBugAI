@@ -286,13 +286,23 @@ export default function AnalysisInsectResultPage() {
                   <ArrowRight size={16} />
                 </Link>
 
-                <Link
-                  href={`/member/calculation?insectID=${result.insect.insectID}`}
-                  className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] text-sm font-medium transition-colors"
-                >
-                  <span>คำนวณสารเคมีสำหรับแมลงนี้</span>
-                  <ExternalLink size={15} />
-                </Link>
+                {(() => {
+                  const params = new URLSearchParams();
+                  params.set('insectID', result.insect.insectID);
+                  if (result.fieldID) {
+                    params.set('fieldID', result.fieldID);
+                  }
+                  params.set('source', 'analysis');
+                  return (
+                    <Link
+                      href={`/member/calculation?${params.toString()}`}
+                      className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] text-sm font-medium transition-colors"
+                    >
+                      <span>คำนวณสารเคมีสำหรับแมลงนี้</span>
+                      <ExternalLink size={15} />
+                    </Link>
+                  );
+                })()}
               </div>
             </div>
           </div>
