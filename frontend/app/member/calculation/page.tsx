@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo, useSyncExternalStore, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, useSyncExternalStore, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Calculator, Loader2, Lock, Info, MapPin } from 'lucide-react';
+import { Calculator, Loader2, Lock, Info, MapPin, AlertCircle } from 'lucide-react';
 import Cookies from 'js-cookie';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -78,6 +78,7 @@ function ChemicalCalculatorContent() {
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [apiError, setApiError] = useState('');
   const [isCalculating, setIsCalculating] = useState(false);
+  const isCalculatingRef = useRef(false);
 
   // 1. โหลดรายชื่อแมลงทั้งหมด
   useEffect(() => {
@@ -114,15 +115,23 @@ function ChemicalCalculatorContent() {
     };
   }, [paramInsectID]);
 
+  const [prevMemberID, setPrevMemberID] = useState(memberID);
+  if (memberID !== prevMemberID) {
+    setPrevMemberID(memberID);
+    setFields([]);
+    setSelectedFieldID('');
+    setFieldAutoFilled(false);
+    setFieldError('');
+    setFieldsLoading(Boolean(memberID));
+  }
+
   // 2. โหลดรายการแปลงนาของสมาชิก และ Auto-fill แปลงเมื่อมี fieldID
   useEffect(() => {
     if (!memberID) {
-      setFields([]);
       return;
     }
 
     const controller = new AbortController();
-    setFieldsLoading(true);
 
     async function loadFields() {
       try {
@@ -193,6 +202,7 @@ function ChemicalCalculatorContent() {
   const handleFieldChange = (newFieldID: string) => {
     setSelectedFieldID(newFieldID);
     setFieldError('');
+    if (apiError) setApiError('');
 
     if (!newFieldID) {
       setFieldAutoFilled(false);
@@ -220,6 +230,7 @@ function ChemicalCalculatorContent() {
 
   const handleChange = (field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    if (apiError) setApiError('');
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -230,6 +241,11 @@ function ChemicalCalculatorContent() {
   };
 
   const validate = (): boolean => {
+    if (!memberID) {
+      setApiError('กรุณาเข้าสู่ระบบก่อนใช้งานการคำนวณ');
+      return false;
+    }
+
     const next: Partial<Record<keyof FormData, string>> = {};
     if (!form.insectID) next.insectID = 'กรุณาเลือกชนิดแมลงศัตรูข้าวเป้าหมาย';
 
@@ -241,16 +257,24 @@ function ChemicalCalculatorContent() {
       next.areaRai = 'กรุณาระบุขนาดพื้นที่อย่างน้อย 1 หน่วย';
     }
 
-    if (!memberID) next.insectID = 'กรุณาเข้าสู่ระบบก่อนใช้งานการคำนวณ';
+    if (form.waterPerRai.trim()) {
+      const water = Number(form.waterPerRai);
+      if (Number.isNaN(water) || water <= 0) {
+        next.waterPerRai = 'กรุณาระบุปริมาณน้ำเป็นตัวเลขที่มากกว่า 0';
+      }
+    }
 
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
   const handleCalculate = async () => {
+    if (isCalculatingRef.current || isCalculating) return;
+
     if (!validate()) return;
 
     try {
+      isCalculatingRef.current = true;
       setIsCalculating(true);
       setApiError('');
 
@@ -283,6 +307,7 @@ function ChemicalCalculatorContent() {
       router.push('/member/calculationresult');
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      isCalculatingRef.current = false;
       setIsCalculating(false);
     }
   };
@@ -302,6 +327,8 @@ function ChemicalCalculatorContent() {
     setFieldError('');
     setErrors({});
     setApiError('');
+    isCalculatingRef.current = false;
+    setIsCalculating(false);
   };
 
   return (
@@ -318,19 +345,13 @@ function ChemicalCalculatorContent() {
             </p>
           </div>
 
-          {apiError && (
-            <div className="mb-6 p-3.5 rounded-md bg-[#FDECEA] border border-[#F4B9B3] text-[#B42318] text-xs">
-              {apiError}
-            </div>
-          )}
-
           {fieldError && (
             <div className="mb-6 p-3.5 rounded-md bg-[#FDECEA] border border-[#F4B9B3] text-[#B42318] text-xs">
               {fieldError}
             </div>
           )}
 
-          {fieldAutoFilled && !fieldError && (
+          {fieldAutoFilled && !fieldError && !apiError && (
             <div className="mb-6 p-3.5 rounded-md bg-[#E8F5EC] border border-[#B7DFC6] text-[#1E7B45] text-xs">
               {isFromAnalysis && paramFieldID
                 ? 'ระบบดึงข้อมูลแปลงนาและขนาดพื้นที่จริงจากผลวิเคราะห์ของคุณเรียบร้อยแล้ว'
@@ -517,6 +538,23 @@ function ChemicalCalculatorContent() {
                 <p className="mt-1 text-xs text-[#B42318]">{errors.waterPerRai}</p>
               )}
             </div>
+
+            {/* API Error Feedback Banner */}
+            {apiError && (
+              <div className="p-4 rounded-md bg-[#FDECEA] border border-[#F4B9B3] flex items-center justify-between gap-3 text-[#B42318] text-xs">
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle size={18} className="shrink-0" />
+                  <span>{apiError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setApiError('')}
+                  className="text-xs text-[#B42318] hover:underline cursor-pointer shrink-0"
+                >
+                  ปิด
+                </button>
+              </div>
+            )}
 
             {/* Buttons */}
             <div className="pt-4 border-t border-[#E3E6E4] flex items-center gap-3">

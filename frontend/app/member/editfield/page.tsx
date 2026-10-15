@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, Suspense, useSyncExternalStore } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Calendar, Loader2, AlertCircle, MapPin, CheckCircle2 } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { getProvinces, getDistricts, getSubdistricts } from '@/app/data/thai_address';
@@ -41,6 +42,7 @@ function EditFieldContent() {
   const [errors, setErrors] = useState<Partial<Record<keyof PlantingRecordFormData, string>>>({});
   const [isLoadingField, setIsLoadingField] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -88,12 +90,13 @@ function EditFieldContent() {
 
     const fetchFieldData = async () => {
       if (!fieldID) {
-        setApiError('ไม่พบรหัสแปลงนาที่ต้องการแก้ไข');
+        setLoadError('ไม่พบรหัสแปลงนาที่ต้องการแก้ไข');
         setIsLoadingField(false);
         return;
       }
 
       setIsLoadingField(true);
+      setLoadError(null);
       setApiError(null);
       try {
         const res = await fetch(`${API_URL}/api/v1/members/${currentMemberId}/fields/${fieldID}`);
@@ -119,7 +122,7 @@ function EditFieldContent() {
           subdistrict: data.subdistrict || '',
         });
       } catch (err) {
-        setApiError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
+        setLoadError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
       } finally {
         setIsLoadingField(false);
       }
@@ -129,6 +132,8 @@ function EditFieldContent() {
   }, [router, fieldID]);
 
   const handleFieldChange = (field: keyof PlantingRecordFormData, value: string) => {
+    setSuccessMessage(null);
+    setApiError(null);
     setForm((prev) => ({
       ...prev,
       [field]: value,
@@ -143,6 +148,8 @@ function EditFieldContent() {
   };
 
   const handleAreaChange = (field: 'areaRai' | 'areaNgan' | 'areaSqWah', value: string) => {
+    setSuccessMessage(null);
+    setApiError(null);
     const num = value === '' ? null : Math.max(0, parseInt(value, 10) || 0);
     setForm((prev) => ({
       ...prev,
@@ -158,6 +165,8 @@ function EditFieldContent() {
   };
 
   const handleProvinceChange = (province: string) => {
+    setSuccessMessage(null);
+    setApiError(null);
     setForm((prev) => ({
       ...prev,
       province,
@@ -174,6 +183,8 @@ function EditFieldContent() {
   };
 
   const handleDistrictChange = (district: string) => {
+    setSuccessMessage(null);
+    setApiError(null);
     setForm((prev) => ({
       ...prev,
       district,
@@ -188,6 +199,8 @@ function EditFieldContent() {
   };
 
   const handleSubdistrictChange = (subdistrict: string) => {
+    setSuccessMessage(null);
+    setApiError(null);
     setForm((prev) => ({
       ...prev,
       subdistrict,
@@ -265,9 +278,6 @@ function EditFieldContent() {
       }
 
       setSuccessMessage('บันทึกการแก้ไขข้อมูลแปลงนาสำเร็จ');
-      setTimeout(() => {
-        router.push('/member/dashboard');
-      }, 1000);
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
@@ -295,36 +305,23 @@ function EditFieldContent() {
               <Loader2 className="animate-spin text-[#2D7048]" size={24} />
               <span>กำลังโหลดข้อมูลแปลงนา...</span>
             </div>
+          ) : loadError ? (
+            <div className="py-8 space-y-4">
+              <div className="p-4 rounded-md bg-[#FDECEA] border border-[#F4B9B3] flex items-center gap-3 text-[#B42318] text-xs">
+                <AlertCircle size={18} className="shrink-0" />
+                <span>{loadError}</span>
+              </div>
+              <div className="text-center">
+                <Link
+                  href="/member/dashboard"
+                  className="inline-flex items-center justify-center h-10 px-4 bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] text-sm font-medium rounded-md transition-colors"
+                >
+                  กลับสู่หน้าแดชบอร์ด
+                </Link>
+              </div>
+            </div>
           ) : (
-            <>
-              {successMessage && (
-                <div className="mb-6 p-4 rounded-md bg-[#E8F5EC] border border-[#B7DFC6] flex items-center gap-3 text-[#1E7B45] text-xs">
-                  <CheckCircle2 size={18} className="shrink-0 text-[#2D7048]" />
-                  <span>{successMessage}</span>
-                </div>
-              )}
-
-              {apiError && (
-                <div className="mb-6 p-4 rounded-md bg-[#FDECEA] border border-[#F4B9B3] flex items-center gap-3 text-[#B42318] text-xs">
-                  <AlertCircle size={18} className="shrink-0" />
-                  <span>{apiError}</span>
-                </div>
-              )}
-
-              {!fieldID && (
-                <div className="py-8 text-center">
-                  <button
-                    type="button"
-                    onClick={() => router.push('/member/dashboard')}
-                    className="h-10 px-4 bg-white hover:bg-[#F1F2F1] border border-[#CDD2CF] text-[#1A1F1C] text-sm font-medium rounded-md transition-colors cursor-pointer"
-                  >
-                    กลับสู่หน้าแดชบอร์ด
-                  </button>
-                </div>
-              )}
-
-              {fieldID && !apiError && (
-                <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
 
                   {/* Field 1: Field Name */}
                   <div>
@@ -520,40 +517,73 @@ function EditFieldContent() {
                     )}
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="pt-4 border-t border-[#E3E6E4] flex items-center justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => router.push('/member/dashboard')}
-                      disabled={isSubmitting}
-                      className="h-10 px-4 bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] text-sm font-medium rounded-md transition-colors cursor-pointer"
-                    >
-                      ยกเลิก
-                    </button>
+            {/* Success Feedback Banner */}
+            {successMessage && (
+              <div className="p-4 rounded-md bg-[#E8F5EC] border border-[#B7DFC6] text-xs text-[#1E7B45] space-y-3">
+                <div className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 size={18} className="shrink-0 text-[#2D7048]" />
+                  <span>{successMessage}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[#B7DFC6]/60">
+                  <Link
+                    href="/member/dashboard"
+                    className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-md bg-[#2D7048] hover:bg-[#25593A] text-white font-medium text-xs transition-colors"
+                  >
+                    กลับสู่หน้าแดชบอร์ด
+                  </Link>
+                </div>
+              </div>
+            )}
 
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="h-10 px-5 bg-[#2D7048] hover:bg-[#25593A] text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          <span>กำลังบันทึก...</span>
-                        </>
-                      ) : (
-                        <span>บันทึกการแก้ไข</span>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </>
-          )}
-        </div>
+            {/* Error Feedback Banner */}
+            {apiError && (
+              <div className="p-4 rounded-md bg-[#FDECEA] border border-[#F4B9B3] flex items-center justify-between gap-3 text-[#B42318] text-xs">
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle size={18} className="shrink-0" />
+                  <span>{apiError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setApiError(null)}
+                  className="text-xs text-[#B42318] hover:underline cursor-pointer shrink-0"
+                >
+                  ปิด
+                </button>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="pt-4 border-t border-[#E3E6E4] flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => router.push('/member/dashboard')}
+                disabled={isSubmitting}
+                className="h-10 px-4 bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] text-sm font-medium rounded-md transition-colors cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-10 px-5 bg-[#2D7048] hover:bg-[#25593A] text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>กำลังบันทึก...</span>
+                  </>
+                ) : (
+                  <span>บันทึกการแก้ไข</span>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
-  );
+  </div>
+);
 }
 
 export default function EditFieldPage() {

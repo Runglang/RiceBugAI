@@ -13,6 +13,9 @@ import {
   Loader2,
   Save,
   ShieldCheck,
+  Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -67,10 +70,15 @@ export default function EditProfilePage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
 
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState | 'newPassword' | 'confirmPassword', string>>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const session = Cookies.get('member_session');
@@ -147,8 +155,22 @@ export default function EditProfilePage() {
     }
   };
 
+  const handlePasswordChange = (field: 'newPassword' | 'confirmPassword', value: string) => {
+    if (field === 'newPassword') setNewPassword(value);
+    else setConfirmPassword(value);
+    setSuccessMessage(null);
+    setApiError(null);
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
   const validate = (): boolean => {
-    const next: Partial<Record<keyof FormState, string>> = {};
+    const next: Partial<Record<keyof FormState | 'newPassword' | 'confirmPassword', string>> = {};
 
     if (!form.username.trim()) {
       next.username = 'กรุณากรอกชื่อผู้ใช้งาน';
@@ -160,6 +182,20 @@ export default function EditProfilePage() {
       next.email = 'กรุณากรอกอีเมล';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       next.email = 'รูปแบบอีเมลไม่ถูกต้อง';
+    }
+
+    if (newPassword.trim() || confirmPassword.trim()) {
+      if (!newPassword.trim()) {
+        next.newPassword = 'กรุณากรอกรหัสผ่านใหม่';
+      } else if (newPassword.length < 8) {
+        next.newPassword = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร';
+      }
+
+      if (!confirmPassword.trim()) {
+        next.confirmPassword = 'กรุณายืนยันรหัสผ่านใหม่';
+      } else if (newPassword.trim() && newPassword !== confirmPassword) {
+        next.confirmPassword = 'รหัสผ่านยืนยันไม่ตรงกัน';
+      }
     }
 
     setErrors(next);
@@ -177,13 +213,17 @@ export default function EditProfilePage() {
     setSuccessMessage(null);
 
     try {
-      const payload = {
+      const payload: Record<string, string | null> = {
         username: form.username.trim(),
         firstname: form.firstname.trim() || null,
         lastname: form.lastname.trim() || null,
         email: form.email.trim(),
         address: form.address.trim() || null,
       };
+
+      if (newPassword.trim()) {
+        payload.password = newPassword;
+      }
 
       const res = await fetch(`${API_ORIGIN}/api/v1/members/${memberID}`, {
         method: 'PUT',
@@ -219,7 +259,17 @@ export default function EditProfilePage() {
       // Update Member Session Cookie so all components immediately see the new data
       Cookies.set('member_session', JSON.stringify(updatedMember), { expires: 1 });
 
-      setSuccessMessage('บันทึกข้อมูลส่วนตัวเรียบร้อยแล้ว');
+      // Reset password fields
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
+
+      setSuccessMessage(
+        newPassword.trim()
+          ? 'บันทึกข้อมูลส่วนตัวและเปลี่ยนรหัสผ่านเรียบร้อยแล้ว'
+          : 'บันทึกข้อมูลส่วนตัวเรียบร้อยแล้ว'
+      );
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
     } finally {
@@ -251,31 +301,6 @@ export default function EditProfilePage() {
             จัดการชื่อ-นามสกุล ชื่อผู้ใช้งาน อีเมลติดต่อ และที่อยู่แปลงเพาะปลูกของคุณ
           </p>
         </div>
-
-        {/* Success Alert Banner */}
-        {successMessage && (
-          <div className="mb-6 p-4 bg-[#E8F5EC] border border-[#B7DFC6] rounded-xl text-sm text-[#1E7B45] flex items-center gap-3 shadow-xs animate-in fade-in duration-200">
-            <CheckCircle2 size={18} className="shrink-0 text-[#2D7048]" />
-            <span className="font-medium">{successMessage}</span>
-          </div>
-        )}
-
-        {/* Error Alert Banner */}
-        {apiError && (
-          <div className="mb-6 p-4 bg-[#FDECEA] border border-[#F4B9B3] rounded-xl text-sm text-[#B42318] flex items-start gap-3 shadow-xs">
-            <AlertCircle size={18} className="shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <span className="font-semibold">ข้อผิดพลาด: </span>
-              {apiError}
-            </div>
-            <button
-              onClick={() => setApiError(null)}
-              className="text-xs text-[#B42318] hover:underline cursor-pointer"
-            >
-              ปิด
-            </button>
-          </div>
-        )}
 
         {/* Profile Card & Form */}
         <div className="bg-white border border-[#E3E6E4] rounded-xl shadow-xs overflow-hidden">
@@ -419,6 +444,130 @@ export default function EditProfilePage() {
                 ข้อมูลที่อยู่นี้จะช่วยในการบันทึกและจัดการพื้นที่เพาะปลูกข้าวของท่าน
               </p>
             </div>
+
+            {/* Change Password Section */}
+            <div className="pt-6 border-t border-[#E3E6E4]">
+              <div className="flex items-center gap-2 mb-4">
+                <Lock size={16} className="text-[#5A635D]" />
+                <h3 className="text-sm font-semibold text-[#1A1F1C]">เปลี่ยนรหัสผ่าน</h3>
+                <span className="text-xs text-[#5A635D]">(ไม่จำเป็นต้องกรอก)</span>
+              </div>
+              <p className="text-xs text-[#5A635D] mb-4">
+                หากต้องการเปลี่ยนรหัสผ่าน ให้กรอกรหัสผ่านใหม่ด้านล่าง หากไม่ต้องการเปลี่ยน ให้เว้นว่างไว้
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* New Password Field */}
+                <div>
+                  <label className="block text-sm font-semibold text-[#1A1F1C] mb-1.5">
+                    รหัสผ่านใหม่
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#5A635D]">
+                      <Lock size={16} />
+                    </div>
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
+                      disabled={isSaving}
+                      placeholder="กรอกรหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)"
+                      className={`w-full h-11 pl-10 pr-10 bg-white border rounded-lg text-sm text-[#1A1F1C] focus:outline-none transition-colors ${
+                        errors.newPassword
+                          ? 'border-[#F4B9B3] focus:border-[#B42318] focus:ring-1 focus:ring-[#F4B9B3]'
+                          : 'border-[#CDD2CF] focus:border-[#2D7048] focus:ring-1 focus:ring-[#2D7048]'
+                      } disabled:bg-[#F1F3F2]`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((v) => !v)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#5A635D] hover:text-[#1A1F1C] cursor-pointer"
+                      tabIndex={-1}
+                    >
+                      {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  {errors.newPassword && (
+                    <p className="mt-1.5 text-xs text-[#B42318] flex items-center gap-1">
+                      <AlertCircle size={13} />
+                      <span>{errors.newPassword}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Confirm Password Field */}
+                <div>
+                  <label className="block text-sm font-semibold text-[#1A1F1C] mb-1.5">
+                    ยืนยันรหัสผ่านใหม่
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#5A635D]">
+                      <Lock size={16} />
+                    </div>
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
+                      disabled={isSaving}
+                      placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
+                      className={`w-full h-11 pl-10 pr-10 bg-white border rounded-lg text-sm text-[#1A1F1C] focus:outline-none transition-colors ${
+                        errors.confirmPassword
+                          ? 'border-[#F4B9B3] focus:border-[#B42318] focus:ring-1 focus:ring-[#F4B9B3]'
+                          : 'border-[#CDD2CF] focus:border-[#2D7048] focus:ring-1 focus:ring-[#2D7048]'
+                      } disabled:bg-[#F1F3F2]`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#5A635D] hover:text-[#1A1F1C] cursor-pointer"
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="mt-1.5 text-xs text-[#B42318] flex items-center gap-1">
+                      <AlertCircle size={13} />
+                      <span>{errors.confirmPassword}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Success Feedback Banner */}
+            {successMessage && (
+              <div className="p-4 bg-[#E8F5EC] border border-[#B7DFC6] rounded-lg text-xs text-[#1E7B45] flex items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200">
+                <div className="flex items-center gap-2.5 font-medium">
+                  <CheckCircle2 size={18} className="shrink-0 text-[#2D7048]" />
+                  <span>{successMessage}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSuccessMessage(null)}
+                  className="text-xs text-[#1E7B45] hover:underline cursor-pointer shrink-0"
+                >
+                  ปิด
+                </button>
+              </div>
+            )}
+
+            {/* Error Feedback Banner */}
+            {apiError && (
+              <div className="p-4 bg-[#FDECEA] border border-[#F4B9B3] rounded-lg text-xs text-[#B42318] flex items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-2.5 font-medium">
+                  <AlertCircle size={18} className="shrink-0" />
+                  <span>{apiError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setApiError(null)}
+                  className="text-xs text-[#B42318] hover:underline cursor-pointer shrink-0"
+                >
+                  ปิด
+                </button>
+              </div>
+            )}
 
             {/* Actions Buttons */}
             <div className="pt-6 border-t border-[#E3E6E4] flex flex-col-reverse sm:flex-row items-center justify-end gap-3">

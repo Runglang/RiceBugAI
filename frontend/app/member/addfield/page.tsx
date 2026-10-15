@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Loader2, AlertCircle, MapPin } from 'lucide-react';
+import Link from 'next/link';
+import { Calendar, Loader2, AlertCircle, MapPin, CheckCircle2 } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { getProvinces, getDistricts, getSubdistricts } from '@/app/data/thai_address';
 
@@ -39,6 +40,7 @@ export default function PlantingRecordForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof PlantingRecordFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const sessionCookie = useSyncExternalStore(
     emptySubscribe,
@@ -77,6 +79,8 @@ export default function PlantingRecordForm() {
   }, [router]);
 
   const handleFieldChange = (field: keyof PlantingRecordFormData, value: string) => {
+    setSuccessMessage(null);
+    setApiError(null);
     setForm((prev) => ({
       ...prev,
       [field]: value,
@@ -91,6 +95,8 @@ export default function PlantingRecordForm() {
   };
 
   const handleAreaChange = (field: 'areaRai' | 'areaNgan' | 'areaSqWah', value: string) => {
+    setSuccessMessage(null);
+    setApiError(null);
     const num = value === '' ? null : Math.max(0, parseInt(value, 10) || 0);
     setForm((prev) => ({
       ...prev,
@@ -106,6 +112,8 @@ export default function PlantingRecordForm() {
   };
 
   const handleProvinceChange = (province: string) => {
+    setSuccessMessage(null);
+    setApiError(null);
     setForm((prev) => ({
       ...prev,
       province,
@@ -122,6 +130,8 @@ export default function PlantingRecordForm() {
   };
 
   const handleDistrictChange = (district: string) => {
+    setSuccessMessage(null);
+    setApiError(null);
     setForm((prev) => ({
       ...prev,
       district,
@@ -136,6 +146,8 @@ export default function PlantingRecordForm() {
   };
 
   const handleSubdistrictChange = (subdistrict: string) => {
+    setSuccessMessage(null);
+    setApiError(null);
     setForm((prev) => ({
       ...prev,
       subdistrict,
@@ -186,6 +198,7 @@ export default function PlantingRecordForm() {
     if (!memberID) return;
 
     setApiError(null);
+    setSuccessMessage(null);
     setIsSubmitting(true);
 
     try {
@@ -210,7 +223,9 @@ export default function PlantingRecordForm() {
         throw new Error('บันทึกข้อมูลแปลงข้าวไม่สำเร็จ (กรุณาตรวจสอบข้อมูลอีกครั้ง)');
       }
 
-      router.push('/member/dashboard');
+      setSuccessMessage('ลงทะเบียนแปลงนาใหม่เรียบร้อยแล้ว');
+      setForm(EMPTY_FORM);
+      setErrors({});
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
@@ -232,13 +247,6 @@ export default function PlantingRecordForm() {
               บันทึกข้อมูลแปลงเพาะปลูก ที่ตั้ง และขนาดพื้นที่เพื่อใช้ในการติดตามอายุข้าวและการคำนวณสารเคมี
             </p>
           </div>
-
-          {apiError && (
-            <div className="mb-6 p-4 rounded-md bg-[#FDECEA] border border-[#F4B9B3] flex items-center gap-3 text-[#B42318] text-xs">
-              <AlertCircle size={18} className="shrink-0" />
-              <span>{apiError}</span>
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
 
@@ -435,6 +443,48 @@ export default function PlantingRecordForm() {
                 <p className="mt-1 text-xs text-[#B42318]">{errors.plantingDate}</p>
               )}
             </div>
+
+            {/* Success Feedback Banner */}
+            {successMessage && (
+              <div className="p-4 rounded-md bg-[#E8F5EC] border border-[#B7DFC6] text-xs text-[#1E7B45] space-y-3">
+                <div className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 size={18} className="shrink-0 text-[#2D7048]" />
+                  <span>{successMessage}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[#B7DFC6]/60">
+                  <Link
+                    href="/member/dashboard"
+                    className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-md bg-[#2D7048] hover:bg-[#25593A] text-white font-medium text-xs transition-colors"
+                  >
+                    กลับสู่หน้าแดชบอร์ด
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setSuccessMessage(null)}
+                    className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-md bg-white hover:bg-[#F1F3F2] border border-[#B7DFC6] text-[#1E7B45] font-medium text-xs transition-colors cursor-pointer"
+                  >
+                    เพิ่มแปลงนาอื่นต่อ
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Error Feedback Banner */}
+            {apiError && (
+              <div className="p-4 rounded-md bg-[#FDECEA] border border-[#F4B9B3] flex items-center justify-between gap-3 text-[#B42318] text-xs">
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle size={18} className="shrink-0" />
+                  <span>{apiError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setApiError(null)}
+                  className="text-xs text-[#B42318] hover:underline cursor-pointer shrink-0"
+                >
+                  ปิด
+                </button>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="pt-4 border-t border-[#E3E6E4] flex items-center justify-end gap-3">

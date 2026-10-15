@@ -46,6 +46,10 @@ public class MemberAuthService {
         member.setEmail(newEmail);
         member.setAddress(request.getAddress() != null ? request.getAddress().trim() : null);
 
+        if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+            member.setPassword(request.getPassword());
+        }
+
         Member saved = memberRepository.save(member);
         return toDTO(saved);
     }

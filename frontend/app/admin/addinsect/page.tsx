@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent } from 'react';
+import Link from 'next/link';
 import ImageUpload from '@/app/components/shared/ImageUpload';
 import { Save, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
@@ -42,6 +43,8 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 interface Status {
   state: SubmitState;
   message: string;
+  actionUrl?: string;
+  actionLabel?: string;
 }
 
 const initialFormData: InsectFormData = {
@@ -58,6 +61,12 @@ export default function InsectForm() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [status, setStatus] = useState<Status>({ state: 'idle', message: '' });
+
+  const previewsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    previewsRef.current = imagePreviews;
+  }, [imagePreviews]);
 
   const [stages, setStages] = useState<RiceGrowthStageDTO[]>([]);
   const [stagesLoading, setStagesLoading] = useState(true);
@@ -109,9 +118,9 @@ export default function InsectForm() {
 
   useEffect(() => {
     return () => {
-      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+      previewsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [imagePreviews]);
+  }, []);
 
   const handleReset = () => {
     setFormData(initialFormData);
@@ -132,6 +141,7 @@ export default function InsectForm() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (status.state === 'loading') return;
 
     if (
       !formData.commonName ||
@@ -160,17 +170,60 @@ export default function InsectForm() {
 
       const saved: InsectDTO = await res.json();
 
+      // Clear the form fields and local previews immediately because the insect record has been created in DB.
+      // This prevents the user from accidentally pressing submit to create a duplicate record.
+      setFormData(initialFormData);
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+      setImageFiles([]);
+      setImagePreviews([]);
+
+      // Case 1: User selected images, but saved?.insectID is missing
+      if (imageFiles.length > 0 && !saved?.insectID) {
+        setStatus({
+          state: 'error',
+          message: 'บันทึกข้อมูลแมลงลงฐานข้อมูลแล้ว แต่ไม่สามารถอัปโหลดรูปภาพได้เนื่องจากไม่ได้รับรหัสแมลงจากเซิร์ฟเวอร์ กรุณาตรวจสอบที่หน้ารายการข้อมูลแมลง',
+          actionUrl: '/admin/listadmininsects',
+          actionLabel: 'ไปที่หน้ารายการข้อมูลแมลง',
+        });
+        return;
+      }
+
+      // Case 2: User selected images, and saved?.insectID exists
       if (imageFiles.length > 0 && saved?.insectID) {
+        let failedImageCount = 0;
+        let lastImageError = '';
+
         for (const file of imageFiles) {
           const imgForm = new FormData();
           imgForm.append('image', file);
-          await fetch(`${API_BASE_URL}/${saved.insectID}/image`, {
-            method: 'POST',
-            body: imgForm,
-          }).catch(() => {});
+          try {
+            const imgRes = await fetch(`${API_BASE_URL}/${saved.insectID}/image`, {
+              method: 'POST',
+              body: imgForm,
+            });
+            if (!imgRes.ok) {
+              failedImageCount++;
+              const errText = await imgRes.text().catch(() => '');
+              lastImageError = errText || `HTTP ${imgRes.status}`;
+            }
+          } catch {
+            failedImageCount++;
+            lastImageError = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
+          }
+        }
+
+        if (failedImageCount > 0) {
+          setStatus({
+            state: 'error',
+            message: `บันทึกข้อมูลแมลงลงฐานข้อมูลแล้ว แต่รูปภาพอัปโหลดไม่สำเร็จ (${failedImageCount}/${imageFiles.length} รูป${lastImageError ? `: ${lastImageError}` : ''}) กรุณาไปจัดการรูปภาพที่หน้าแก้ไขข้อมูลแมลง`,
+            actionUrl: `/admin/editinsect?insectId=${saved.insectID}`,
+            actionLabel: 'ไปที่หน้าแก้ไขข้อมูลแมลง',
+          });
+          return;
         }
       }
 
+      // Case 3: All images uploaded successfully, or no images selected
       setStatus({
         state: 'success',
         message: 'บันทึกข้อมูลแมลงลงฐานข้อมูลสำเร็จ',
@@ -337,9 +390,21 @@ export default function InsectForm() {
               </div>
             )}
             {status.state === 'error' && (
-              <div className="flex items-center gap-2 text-xs font-medium text-[#B42318] bg-[#FDECEA] border border-[#F4B9B3] rounded-md p-3">
-                <AlertCircle size={16} className="shrink-0 text-[#B42318]" />
-                <span>{status.message}</span>
+              <div className="flex flex-col gap-2.5 text-xs font-medium text-[#B42318] bg-[#FDECEA] border border-[#F4B9B3] rounded-md p-3">
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={16} className="shrink-0 text-[#B42318]" />
+                  <span>{status.message}</span>
+                </div>
+                {status.actionUrl && (
+                  <div className="pt-2 border-t border-[#F4B9B3]/60 flex items-center gap-2">
+                    <Link
+                      href={status.actionUrl}
+                      className="inline-flex items-center justify-center px-3 py-1.5 rounded-md bg-[#B42318] hover:bg-[#911D13] text-white font-medium text-xs transition-colors"
+                    >
+                      {status.actionLabel || 'ไปที่หน้ารายการ'}
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

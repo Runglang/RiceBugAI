@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
+import Link from 'next/link';
 import ImageUpload from '@/app/components/shared/ImageUpload';
 import { Save, Loader2, AlertCircle, CheckCircle2, X } from 'lucide-react';
 
@@ -44,6 +45,8 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 interface Status {
   state: SubmitState;
   message: string;
+  actionUrl?: string;
+  actionLabel?: string;
 }
 
 const initialFormState: FormState = {
@@ -178,6 +181,7 @@ export default function AddChemicalPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (status.state === 'loading') return;
 
     const dosageNumber = parseFloat(formData.dosageRate);
     if (
@@ -213,8 +217,26 @@ export default function AddChemicalPage() {
 
       const saved: ChemicalDTO = await res.json();
 
-      let imageWarning = '';
+      // Clear the form fields and image preview immediately because chemical record has been created in DB.
+      // This prevents the user from accidentally pressing submit to create a duplicate record.
+      setFormData(initialFormState);
+      setTargetInsects([]);
+      handleFileRemove();
+
+      // Case 1: User selected an image, but saved?.chemicalID is missing
+      if (imageFile && !saved?.chemicalID) {
+        setStatus({
+          state: 'error',
+          message: 'บันทึกข้อมูลสารเคมีลงฐานข้อมูลแล้ว แต่ไม่สามารถอัปโหลดรูปภาพได้เนื่องจากไม่ได้รับรหัสสารเคมีจากเซิร์ฟเวอร์ กรุณาตรวจสอบที่หน้ารายการสารเคมี',
+          actionUrl: '/admin/listadminchemicals',
+          actionLabel: 'ไปที่หน้ารายการสารเคมี',
+        });
+        return;
+      }
+
+      // Case 2: User selected an image, and saved?.chemicalID exists
       if (imageFile && saved?.chemicalID) {
+        let imageWarning = '';
         const imgForm = new FormData();
         imgForm.append('image', imageFile);
         try {
@@ -224,21 +246,28 @@ export default function AddChemicalPage() {
           });
           if (!imgRes.ok) {
             const imgErrText = await imgRes.text().catch(() => '');
-            imageWarning = ` (แต่รูปภาพอัปโหลดไม่สำเร็จ: ${imgErrText || `HTTP ${imgRes.status}`})`;
+            imageWarning = imgErrText || `HTTP ${imgRes.status}`;
           }
         } catch {
-          imageWarning = ' (แต่รูปภาพอัปโหลดไม่สำเร็จ: เชื่อมต่อเซิร์ฟเวอร์ไม่ได้)';
+          imageWarning = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
+        }
+
+        if (imageWarning) {
+          setStatus({
+            state: 'error',
+            message: `บันทึกข้อมูลสารเคมีลงฐานข้อมูลแล้ว แต่รูปภาพอัปโหลดไม่สำเร็จ (${imageWarning}) กรุณาไปจัดการรูปภาพที่หน้าแก้ไขข้อมูลสารเคมี`,
+            actionUrl: `/admin/editchemical?chemicalId=${saved.chemicalID}`,
+            actionLabel: 'ไปที่หน้าแก้ไขข้อมูลสารเคมี',
+          });
+          return;
         }
       }
 
+      // Case 3: Image upload succeeded, or no image selected
       setStatus({
-        state: imageWarning ? 'error' : 'success',
-        message: 'บันทึกข้อมูลสารเคมีลงฐานข้อมูลสำเร็จ' + imageWarning,
+        state: 'success',
+        message: 'บันทึกข้อมูลสารเคมีลงฐานข้อมูลสำเร็จ',
       });
-
-      if (!imageWarning) {
-        handleReset();
-      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์';
       setStatus({ state: 'error', message });
@@ -484,9 +513,21 @@ export default function AddChemicalPage() {
               </div>
             )}
             {status.state === 'error' && (
-              <div className="flex items-center gap-2 text-xs font-medium text-[#B42318] bg-[#FDECEA] border border-[#F4B9B3] rounded-md p-3">
-                <AlertCircle size={16} className="shrink-0 text-[#B42318]" />
-                <span>{status.message}</span>
+              <div className="flex flex-col gap-2.5 text-xs font-medium text-[#B42318] bg-[#FDECEA] border border-[#F4B9B3] rounded-md p-3">
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={16} className="shrink-0 text-[#B42318]" />
+                  <span>{status.message}</span>
+                </div>
+                {status.actionUrl && (
+                  <div className="pt-2 border-t border-[#F4B9B3]/60 flex items-center gap-2">
+                    <Link
+                      href={status.actionUrl}
+                      className="inline-flex items-center justify-center px-3 py-1.5 rounded-md bg-[#B42318] hover:bg-[#911D13] text-white font-medium text-xs transition-colors"
+                    >
+                      {status.actionLabel || 'ไปที่หน้ารายการ'}
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

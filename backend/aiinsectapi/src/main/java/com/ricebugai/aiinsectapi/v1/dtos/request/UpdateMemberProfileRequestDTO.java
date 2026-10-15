@@ -23,4 +23,6 @@ public class UpdateMemberProfileRequestDTO {
 
     private String address;
 
+    private String password;
+
 }
