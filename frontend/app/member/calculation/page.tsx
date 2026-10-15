@@ -38,6 +38,29 @@ const EMPTY_FORM: FormData = {
 
 const emptySubscribe = () => () => {};
 
+// ตัวเลขเท่านั้น: ตัวเลข 0-9 และทศนิยมได้ (ไม่รับเครื่องหมาย, เว้นวรรค, ตัวอักษร, รูปแบบ e)
+const NUMERIC_PATTERN = /^(\d+(\.\d+)?|\.\d+)$/;
+
+// ตรวจค่า string ที่ผู้ใช้กรอกโดยตรง (ไม่ trim และไม่แปลงเป็น Number ก่อนตรวจ)
+// คืนค่าข้อความ Error หรือ '' เมื่อผ่าน
+const validateNumericText = (value: string, label: string, emptyHint = ''): string => {
+  if (value === '') return `กรุณากรอก${label}${emptyHint}`;
+  if (/\s/.test(value)) return `${label}ห้ามมีช่องว่างหรือเว้นวรรค`;
+  if (!NUMERIC_PATTERN.test(value)) return `${label}ต้องเป็นตัวเลขเท่านั้น`;
+  return '';
+};
+
+// ตรวจช่องพื้นที่ (areaRai, areaNgan, areaSqWah): รับเฉพาะจำนวนเต็มไม่ติดลบ (ไม่รับทศนิยม, ช่องว่าง หรือตัวอักษร)
+const validateOptionalIntegerText = (value: string, label: string): string => {
+  if (value === '') return '';
+  if (/\s/.test(value)) return `${label}ห้ามมีช่องว่างหรือเว้นวรรค`;
+  if (!/^\d+$/.test(value)) return `${label}ต้องเป็นตัวเลขจำนวนเต็มไม่ติดลบเท่านั้น`;
+  return '';
+};
+
+// ช่องว่างตีความเป็น 0 (ใช้เฉพาะตอนตรวจพื้นที่รวมและสร้าง payload)
+const areaToNumber = (value: string): number => (value === '' ? 0 : Number(value));
+
 function ChemicalCalculatorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -223,6 +246,8 @@ function ChemicalCalculatorContent() {
       setErrors((prev) => {
         const next = { ...prev };
         delete next.areaRai;
+        delete next.areaNgan;
+        delete next.areaSqWah;
         return next;
       });
     }
@@ -231,13 +256,16 @@ function ChemicalCalculatorContent() {
   const handleChange = (field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (apiError) setApiError('');
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      if (field === 'areaRai' || field === 'areaNgan' || field === 'areaSqWah') {
+        if (next.areaRai === 'กรุณาระบุขนาดพื้นที่อย่างน้อย 1 หน่วย') {
+          delete next.areaRai;
+        }
+      }
+      return next;
+    });
   };
 
   const validate = (): boolean => {
@@ -249,19 +277,47 @@ function ChemicalCalculatorContent() {
     const next: Partial<Record<keyof FormData, string>> = {};
     if (!form.insectID) next.insectID = 'กรุณาเลือกชนิดแมลงศัตรูข้าวเป้าหมาย';
 
-    const rai = Number(form.areaRai) || 0;
-    const ngan = Number(form.areaNgan) || 0;
-    const sqwah = Number(form.areaSqWah) || 0;
+    // ช่องพื้นที่เว้นว่างได้ แต่ถ้ากรอกต้องเป็นตัวเลขจำนวนเต็มไม่ติดลบเท่านั้น (ห้ามทศนิยมและ whitespace)
+    const raiError = validateOptionalIntegerText(form.areaRai, 'จำนวนไร่');
+    const nganError = validateOptionalIntegerText(form.areaNgan, 'จำนวนงาน');
+    const sqwahError = validateOptionalIntegerText(form.areaSqWah, 'จำนวนตารางวา');
 
-    if (rai === 0 && ngan === 0 && sqwah === 0) {
-      next.areaRai = 'กรุณาระบุขนาดพื้นที่อย่างน้อย 1 หน่วย';
+    if (raiError) next.areaRai = raiError;
+    if (nganError) next.areaNgan = nganError;
+    if (sqwahError) next.areaSqWah = sqwahError;
+
+    // ตรวจสอบช่วงค่าของ งาน (0-3) และ ตารางวา (0-99)
+    if (!nganError && form.areaNgan !== '') {
+      const nganVal = parseInt(form.areaNgan, 10);
+      if (nganVal > 3) {
+        next.areaNgan = 'จำนวนงานต้องอยู่ระหว่าง 0–3';
+      }
     }
 
-    if (form.waterPerRai.trim()) {
-      const water = Number(form.waterPerRai);
-      if (Number.isNaN(water) || water <= 0) {
-        next.waterPerRai = 'กรุณาระบุปริมาณน้ำเป็นตัวเลขที่มากกว่า 0';
+    if (!sqwahError && form.areaSqWah !== '') {
+      const sqwahVal = parseInt(form.areaSqWah, 10);
+      if (sqwahVal > 99) {
+        next.areaSqWah = 'จำนวนตารางวาต้องอยู่ระหว่าง 0–99';
       }
+    }
+
+    // พื้นที่รวมต้องมากกว่า 0 (ตรวจเมื่อทั้ง 3 ช่องไม่มี error)
+    if (!next.areaRai && !next.areaNgan && !next.areaSqWah) {
+      const rai = areaToNumber(form.areaRai);
+      const ngan = areaToNumber(form.areaNgan);
+      const sqwah = areaToNumber(form.areaSqWah);
+
+      if (rai === 0 && ngan === 0 && sqwah === 0) {
+        next.areaRai = 'กรุณาระบุขนาดพื้นที่อย่างน้อย 1 หน่วย';
+      }
+    }
+
+    const waterError = validateNumericText(form.waterPerRai, 'ปริมาณน้ำที่ใช้ต่อไร่');
+    if (waterError) {
+      next.waterPerRai = waterError;
+    } else if (Number(form.waterPerRai) <= 0) {
+      // กติกาเดิม: ปริมาณน้ำต้องมากกว่า 0
+      next.waterPerRai = 'กรุณาระบุปริมาณน้ำเป็นตัวเลขที่มากกว่า 0';
     }
 
     setErrors(next);
@@ -278,15 +334,15 @@ function ChemicalCalculatorContent() {
       setIsCalculating(true);
       setApiError('');
 
-      const rai = Number(form.areaRai) || 0;
-      const ngan = Number(form.areaNgan) || 0;
-      const sqwah = Number(form.areaSqWah) || 0;
+      const rai = form.areaRai ? parseInt(form.areaRai, 10) : 0;
+      const ngan = form.areaNgan ? parseInt(form.areaNgan, 10) : 0;
+      const sqwah = form.areaSqWah ? parseInt(form.areaSqWah, 10) : 0;
 
       const payload = {
         insectID: form.insectID,
-        areaRai: Math.floor(rai),
-        areaNgan: Math.floor(ngan),
-        areaSqWah: Math.floor(sqwah),
+        areaRai: rai,
+        areaNgan: ngan,
+        areaSqWah: sqwah,
         waterPerRai: form.waterPerRai.trim() ? Number(form.waterPerRai) : null,
       };
 
@@ -475,7 +531,8 @@ function ChemicalCalculatorContent() {
                 <div>
                   <span className="block text-xs text-[#5A635D] mb-1">ไร่</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     min="0"
                     placeholder="0"
                     value={form.areaRai}
@@ -483,11 +540,15 @@ function ChemicalCalculatorContent() {
                     disabled={isCalculating}
                     className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
                   />
+                  {errors.areaRai && (
+                    <p className="mt-1.5 text-xs text-[#B42318]">{errors.areaRai}</p>
+                  )}
                 </div>
                 <div>
                   <span className="block text-xs text-[#5A635D] mb-1">งาน</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     min="0"
                     max="3"
                     placeholder="0"
@@ -496,11 +557,15 @@ function ChemicalCalculatorContent() {
                     disabled={isCalculating}
                     className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
                   />
+                  {errors.areaNgan && (
+                    <p className="mt-1.5 text-xs text-[#B42318]">{errors.areaNgan}</p>
+                  )}
                 </div>
                 <div>
                   <span className="block text-xs text-[#5A635D] mb-1">ตารางวา</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     min="0"
                     max="99"
                     placeholder="0"
@@ -509,23 +574,24 @@ function ChemicalCalculatorContent() {
                     disabled={isCalculating}
                     className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
                   />
+                  {errors.areaSqWah && (
+                    <p className="mt-1.5 text-xs text-[#B42318]">{errors.areaSqWah}</p>
+                  )}
                 </div>
               </div>
-              {errors.areaRai && (
-                <p className="mt-1.5 text-xs text-[#B42318]">{errors.areaRai}</p>
-              )}
             </div>
 
             {/* Water Volume */}
             <div className="pt-2 border-t border-[#E3E6E4]">
               <label className="block text-sm font-medium text-[#1A1F1C] mb-1">
-                ปริมาณน้ำที่ใช้ต่อไร่ (ลิตร)
+                ปริมาณน้ำที่ใช้ต่อไร่ (ลิตร) <span className="text-[#B42318]">*</span>
                 <span className="text-[#5A635D] font-normal ml-1 text-xs">
                   — สำหรับสารเคมีชนิดพ่นทางใบ
                 </span>
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 min="0"
                 step="any"
                 placeholder="ค่ามาตรฐานทั่วไป เช่น 60 ลิตร/ไร่"

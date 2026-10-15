@@ -39,6 +39,7 @@ function EditFieldContent() {
   const fieldID = searchParams.get('fieldID') || searchParams.get('id');
 
   const [form, setForm] = useState<PlantingRecordFormData>(EMPTY_FORM);
+  const [areaText, setAreaText] = useState({ areaRai: '', areaNgan: '', areaSqWah: '' });
   const [errors, setErrors] = useState<Partial<Record<keyof PlantingRecordFormData, string>>>({});
   const [isLoadingField, setIsLoadingField] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -121,6 +122,11 @@ function EditFieldContent() {
           district: data.district || '',
           subdistrict: data.subdistrict || '',
         });
+        setAreaText({
+          areaRai: data.areaRai != null ? String(data.areaRai) : '',
+          areaNgan: data.areaNgan != null ? String(data.areaNgan) : '',
+          areaSqWah: data.areaSqWah != null ? String(data.areaSqWah) : '',
+        });
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
       } finally {
@@ -150,18 +156,19 @@ function EditFieldContent() {
   const handleAreaChange = (field: 'areaRai' | 'areaNgan' | 'areaSqWah', value: string) => {
     setSuccessMessage(null);
     setApiError(null);
-    const num = value === '' ? null : Math.max(0, parseInt(value, 10) || 0);
+    setAreaText((prev) => ({ ...prev, [field]: value }));
     setForm((prev) => ({
       ...prev,
-      [field]: num,
+      [field]: /^\d+$/.test(value) ? parseInt(value, 10) : null,
     }));
-    if (errors.areaRai) {
-      setErrors((prev) => {
-        const next = { ...prev };
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      if (next.areaRai === 'กรุณาระบุขนาดพื้นที่อย่างน้อย 1 หน่วย') {
         delete next.areaRai;
-        return next;
-      });
-    }
+      }
+      return next;
+    });
   };
 
   const handleProvinceChange = (province: string) => {
@@ -216,19 +223,67 @@ function EditFieldContent() {
 
   const validate = (): boolean => {
     const next: Partial<Record<keyof PlantingRecordFormData, string>> = {};
-    if (!form.fieldName.trim()) {
+
+    const name = form.fieldName;
+    if (name.trim() === '') {
       next.fieldName = 'กรุณาระบุชื่อแปลงหรือสถานที่ปลูกข้าว';
+    } else if (/\s/.test(name)) {
+      next.fieldName = 'ชื่อแปลงห้ามมีช่องว่าง';
+    } else if (name.length < 3 || name.length > 12) {
+      next.fieldName = 'ชื่อแปลงต้องมีความยาว 3–12 ตัวอักษร';
+    } else if (!/^[A-Za-z0-9\u0E01-\u0E3A\u0E40-\u0E4E]+$/.test(name)) {
+      next.fieldName = 'ชื่อแปลงใช้ได้เฉพาะตัวอักษรภาษาอังกฤษ ภาษาไทย และตัวเลข';
     }
+
     if (!form.plantingDate) {
       next.plantingDate = 'กรุณาระบุวันที่เริ่มปลูกข้าว';
+    } else {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      if (form.plantingDate > todayStr) {
+        next.plantingDate = 'วันที่เริ่มปลูกข้าวต้องไม่เป็นวันที่ในอนาคต';
+      }
     }
 
-    const rai = form.areaRai ?? 0;
-    const ngan = form.areaNgan ?? 0;
-    const sqwah = form.areaSqWah ?? 0;
+    (
+      [
+        ['areaRai', 'ไร่'],
+        ['areaNgan', 'งาน'],
+        ['areaSqWah', 'ตารางวา'],
+      ] as const
+    ).forEach(([key, label]) => {
+      const v = areaText[key];
+      if (v === '') {
+        return; // ปล่อยว่างได้ (Payload ส่งเป็น 0 ตามเดิม)
+      }
+      if (/\s/.test(v)) {
+        next[key] = `${label}ห้ามมีช่องว่าง`;
+      } else if (!/^\d+$/.test(v)) {
+        next[key] = `${label}ต้องเป็นตัวเลขจำนวนเต็มไม่ติดลบเท่านั้น`;
+      }
+    });
 
-    if (rai === 0 && ngan === 0 && sqwah === 0) {
-      next.areaRai = 'กรุณาระบุขนาดพื้นที่เพาะปลูกอย่างน้อย 1 หน่วย';
+    if (!next.areaNgan && areaText.areaNgan !== '') {
+      const nganVal = parseInt(areaText.areaNgan, 10);
+      if (nganVal > 3) {
+        next.areaNgan = 'งานต้องอยู่ระหว่าง 0–3';
+      }
+    }
+
+    if (!next.areaSqWah && areaText.areaSqWah !== '') {
+      const sqwahVal = parseInt(areaText.areaSqWah, 10);
+      if (sqwahVal > 99) {
+        next.areaSqWah = 'ตารางวาต้องอยู่ระหว่าง 0–99';
+      }
+    }
+
+    if (!next.areaRai && !next.areaNgan && !next.areaSqWah) {
+      const r = form.areaRai ?? 0;
+      const n = form.areaNgan ?? 0;
+      const w = form.areaSqWah ?? 0;
+      if (r === 0 && n === 0 && w === 0) {
+        next.areaRai = 'กรุณาระบุขนาดพื้นที่อย่างน้อย 1 หน่วย';
+      }
     }
 
     if (!form.province) {
@@ -333,7 +388,7 @@ function EditFieldContent() {
                       value={form.fieldName}
                       onChange={(e) => handleFieldChange('fieldName', e.target.value)}
                       className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
-                      placeholder="เช่น แปลงนาดอนทุ่งเหนือ, แปลงหลังบ้าน"
+                      placeholder="เช่น แปลงนาเหนือ"
                       disabled={isSubmitting}
                     />
                     {errors.fieldName && (
@@ -444,15 +499,19 @@ function EditFieldContent() {
                           ไร่
                         </label>
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           min={0}
                           step={1}
-                          value={form.areaRai ?? ''}
+                          value={areaText.areaRai}
                           onChange={(e) => handleAreaChange('areaRai', e.target.value)}
                           placeholder="0"
                           disabled={isSubmitting}
                           className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
                         />
+                        {errors.areaRai && (
+                          <p className="mt-1 text-xs text-[#B42318]">{errors.areaRai}</p>
+                        )}
                       </div>
 
                       <div>
@@ -460,16 +519,20 @@ function EditFieldContent() {
                           งาน
                         </label>
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           min={0}
                           max={3}
                           step={1}
-                          value={form.areaNgan ?? ''}
+                          value={areaText.areaNgan}
                           onChange={(e) => handleAreaChange('areaNgan', e.target.value)}
                           placeholder="0"
                           disabled={isSubmitting}
                           className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
                         />
+                        {errors.areaNgan && (
+                          <p className="mt-1 text-xs text-[#B42318]">{errors.areaNgan}</p>
+                        )}
                       </div>
 
                       <div>
@@ -477,21 +540,22 @@ function EditFieldContent() {
                           ตารางวา
                         </label>
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           min={0}
                           max={99}
                           step={1}
-                          value={form.areaSqWah ?? ''}
+                          value={areaText.areaSqWah}
                           onChange={(e) => handleAreaChange('areaSqWah', e.target.value)}
                           placeholder="0"
                           disabled={isSubmitting}
                           className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"
                         />
+                        {errors.areaSqWah && (
+                          <p className="mt-1 text-xs text-[#B42318]">{errors.areaSqWah}</p>
+                        )}
                       </div>
                     </div>
-                    {errors.areaRai && (
-                      <p className="mt-1.5 text-xs text-[#B42318]">{errors.areaRai}</p>
-                    )}
                   </div>
 
                   {/* Field 4: Planting Date */}

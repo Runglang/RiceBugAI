@@ -7,6 +7,11 @@ import Link from 'next/link';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
+const THAI_NAME_REGEX = /^[ก-ฮะ-ฺเ-ๅ็-๎]+$/;
+const USERNAME_REGEX = /^[a-zA-Z0-9]+$/;
+const PASSWORD_REGEX = /^[a-zA-Z0-9!#_.]+$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -25,13 +30,109 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!acceptedTerms) {
-      setError('กรุณายอมรับข้อกำหนดในการให้บริการ');
+    // 1. Username
+    if (!username || username.trim() === '') {
+      setError('กรุณากรอกชื่อผู้ใช้');
+      return;
+    }
+    if (/\s/.test(username)) {
+      setError('ชื่อผู้ใช้ต้องไม่มีช่องว่าง');
+      return;
+    }
+    if (username.length < 3 || username.length > 12) {
+      setError('ชื่อผู้ใช้ต้องมีความยาว 3-12 ตัวอักษร');
+      return;
+    }
+    if (!USERNAME_REGEX.test(username)) {
+      setError('ชื่อผู้ใช้ต้องเป็นตัวอักษรภาษาอังกฤษ (A-Z, a-z) หรือตัวเลข (0-9) เท่านั้น');
       return;
     }
 
-    if (password.length < 8) {
-      setError('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร');
+    // 2. Firstname
+    if (!firstname || firstname.trim() === '') {
+      setError('กรุณากรอกชื่อจริง');
+      return;
+    }
+    if (/\s/.test(firstname)) {
+      setError('ชื่อจริงต้องไม่มีช่องว่าง');
+      return;
+    }
+    if (!THAI_NAME_REGEX.test(firstname)) {
+      setError('ชื่อจริงต้องเป็นตัวอักษรภาษาไทยเท่านั้น');
+      return;
+    }
+    if (firstname.length > 20) {
+      setError('ชื่อจริงต้องมีความยาวไม่เกิน 20 ตัวอักษร');
+      return;
+    }
+
+    // 3. Lastname
+    if (!lastname || lastname.trim() === '') {
+      setError('กรุณากรอกนามสกุล');
+      return;
+    }
+    if (/\s/.test(lastname)) {
+      setError('นามสกุลต้องไม่มีช่องว่าง');
+      return;
+    }
+    if (!THAI_NAME_REGEX.test(lastname)) {
+      setError('นามสกุลต้องเป็นตัวอักษรภาษาไทยเท่านั้น');
+      return;
+    }
+    if (lastname.length > 20) {
+      setError('นามสกุลต้องมีความยาวไม่เกิน 20 ตัวอักษร');
+      return;
+    }
+
+    // 4. Email
+    if (!email || email.trim() === '') {
+      setError('กรุณากรอกอีเมล');
+      return;
+    }
+    if (/\s/.test(email)) {
+      setError('อีเมลต้องไม่มีช่องว่าง');
+      return;
+    }
+    if (email.length < 5 || email.length > 60) {
+      setError('อีเมลต้องมีความยาว 5-60 ตัวอักษร');
+      return;
+    }
+    if (!EMAIL_REGEX.test(email)) {
+      setError('รูปแบบอีเมลไม่ถูกต้อง');
+      return;
+    }
+
+    // 5. Address
+    if (!address || address.trim() === '') {
+      setError('กรุณากรอกที่อยู่ / ที่ตั้งแปลงเพาะปลูก');
+      return;
+    }
+    if (address.length > 500) {
+      setError('ที่อยู่ต้องมีความยาวไม่เกิน 500 ตัวอักษร');
+      return;
+    }
+
+    // 6. Password
+    if (!password) {
+      setError('กรุณากรอกรหัสผ่าน');
+      return;
+    }
+    if (/\s/.test(password)) {
+      setError('รหัสผ่านต้องไม่มีช่องว่าง');
+      return;
+    }
+    if (password.length < 8 || password.length > 16) {
+      setError('รหัสผ่านต้องมีความยาว 8-16 ตัวอักษร');
+      return;
+    }
+    if (!PASSWORD_REGEX.test(password)) {
+      setError('รหัสผ่านต้องประกอบด้วยตัวอักษรภาษาอังกฤษ ตัวเลข และอักขระพิเศษ (!, #, _, .) เท่านั้น');
+      return;
+    }
+
+    // 7. Terms
+    if (!acceptedTerms) {
+      setError('กรุณายอมรับข้อกำหนดในการให้บริการ');
       return;
     }
 
@@ -101,7 +202,7 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
 
           {/* Username */}
           <div>
@@ -118,6 +219,9 @@ export default function RegisterPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
+              minLength={3}
+              maxLength={12}
+              pattern="[a-zA-Z0-9]{3,12}"
               disabled={isLoading || success}
               className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
               placeholder="ระบุชื่อผู้ใช้สำหรับเข้าสู่ระบบ"
@@ -139,6 +243,7 @@ export default function RegisterPage() {
                 type="text"
                 value={firstname}
                 onChange={(e) => setFirstname(e.target.value)}
+                required
                 disabled={isLoading || success}
                 className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
                 placeholder="ชื่อจริง"
@@ -157,6 +262,7 @@ export default function RegisterPage() {
                 type="text"
                 value={lastname}
                 onChange={(e) => setLastname(e.target.value)}
+                required
                 disabled={isLoading || success}
                 className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
                 placeholder="นามสกุล"
@@ -179,6 +285,8 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              minLength={5}
+              maxLength={60}
               disabled={isLoading || success}
               className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
               placeholder="example@domain.com"
@@ -200,6 +308,7 @@ export default function RegisterPage() {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               required
+              maxLength={500}
               disabled={isLoading || success}
               className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
               placeholder="ตำบล อำเภอ จังหวัด"
@@ -222,6 +331,9 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={8}
+                maxLength={16}
+                pattern="[a-zA-Z0-9!#_.]{8,16}"
                 disabled={isLoading || success}
                 className="w-full h-10 pl-3 pr-10 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
                 placeholder="กรอกรหัสผ่าน"

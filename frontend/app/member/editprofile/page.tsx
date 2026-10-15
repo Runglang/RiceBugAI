@@ -160,40 +160,77 @@ export default function EditProfilePage() {
     else setConfirmPassword(value);
     setSuccessMessage(null);
     setApiError(null);
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      if (field === 'newPassword' && next.confirmPassword === 'รหัสผ่านยืนยันไม่ตรงกัน') {
+        delete next.confirmPassword;
+      }
+      return next;
+    });
   };
 
   const validate = (): boolean => {
     const next: Partial<Record<keyof FormState | 'newPassword' | 'confirmPassword', string>> = {};
 
-    if (!form.username.trim()) {
+    // Username: ห้ามว่าง, 3–12 ตัว, อังกฤษ+ตัวเลข, ห้ามมีช่องว่าง
+    const username = form.username;
+    if (!username.trim()) {
       next.username = 'กรุณากรอกชื่อผู้ใช้งาน';
-    } else if (form.username.trim().length < 3) {
-      next.username = 'ชื่อผู้ใช้งานต้องมีความยาวอย่างน้อย 3 ตัวอักษร';
+    } else if (/\s/.test(username)) {
+      next.username = 'ชื่อผู้ใช้งานต้องไม่มีช่องว่าง';
+    } else if (username.length < 3 || username.length > 12) {
+      next.username = 'ชื่อผู้ใช้งานต้องมีความยาว 3–12 ตัวอักษร';
+    } else if (!/^[A-Za-z0-9]+$/.test(username)) {
+      next.username = 'ชื่อผู้ใช้งานใช้ได้เฉพาะภาษาอังกฤษและตัวเลข';
     }
 
-    if (!form.email.trim()) {
+    // Firstname / Lastname: ห้ามว่าง, ภาษาไทย (รวมสระ/วรรณยุกต์), ไม่เกิน 20, ห้ามมีช่องว่าง
+    const checkThaiName = (value: string, label: string): string | undefined => {
+      if (!value || !value.trim()) return undefined;
+      if (/\s/.test(value)) return `${label}ต้องไม่มีช่องว่าง`;
+      if (value.length > 20) return `${label}ต้องยาวไม่เกิน 20 ตัวอักษร`;
+      if (!/^[\u0E01-\u0E3A\u0E40-\u0E4E]+$/.test(value)) return `${label}ใช้ได้เฉพาะอักขระภาษาไทย`;
+      return undefined;
+    };
+    const firstnameErr = checkThaiName(form.firstname, 'ชื่อจริง');
+    if (firstnameErr) next.firstname = firstnameErr;
+    const lastnameErr = checkThaiName(form.lastname, 'นามสกุล');
+    if (lastnameErr) next.lastname = lastnameErr;
+
+    // Email: ห้ามว่าง, 5–60 ตัว, รูปแบบถูกต้อง, ห้ามมีช่องว่าง
+    const email = form.email;
+    if (!email.trim()) {
       next.email = 'กรุณากรอกอีเมล';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    } else if (/\s/.test(email)) {
+      next.email = 'อีเมลต้องไม่มีช่องว่าง';
+    } else if (email.length < 5 || email.length > 60) {
+      next.email = 'อีเมลต้องมีความยาว 5–60 ตัวอักษร';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       next.email = 'รูปแบบอีเมลไม่ถูกต้อง';
     }
 
-    if (newPassword.trim() || confirmPassword.trim()) {
-      if (!newPassword.trim()) {
+    // Address: ห้ามว่าง, ไม่เกิน 500 (อนุญาตช่องว่างปกติ)
+    const address = form.address.trim();
+    if (address && form.address.length > 500) {
+      next.address = 'ที่อยู่ต้องยาวไม่เกิน 500 ตัวอักษร';
+    }
+
+    // Password: ไม่บังคับกรอก แต่ถ้าเริ่มกรอกต้องตรวจตาม SRS
+    if (newPassword !== '' || confirmPassword !== '') {
+      if (!newPassword) {
         next.newPassword = 'กรุณากรอกรหัสผ่านใหม่';
-      } else if (newPassword.length < 8) {
-        next.newPassword = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร';
+      } else if (/\s/.test(newPassword)) {
+        next.newPassword = 'รหัสผ่านต้องไม่มีช่องว่าง';
+      } else if (newPassword.length < 8 || newPassword.length > 16) {
+        next.newPassword = 'รหัสผ่านใหม่ต้องมีความยาว 8–16 ตัวอักษร';
+      } else if (!/^[A-Za-z0-9!#_.]+$/.test(newPassword)) {
+        next.newPassword = 'รหัสผ่านใช้ได้เฉพาะภาษาอังกฤษ ตัวเลข และ ! # _ .';
       }
 
-      if (!confirmPassword.trim()) {
+      if (!confirmPassword) {
         next.confirmPassword = 'กรุณายืนยันรหัสผ่านใหม่';
-      } else if (newPassword.trim() && newPassword !== confirmPassword) {
+      } else if (newPassword !== confirmPassword) {
         next.confirmPassword = 'รหัสผ่านยืนยันไม่ตรงกัน';
       }
     }
@@ -375,6 +412,12 @@ export default function EditProfilePage() {
                   placeholder="กรอกชื่อจริง"
                   className="w-full h-11 px-3.5 bg-white border border-[#CDD2CF] rounded-lg text-sm text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-1 focus:ring-[#2D7048] disabled:bg-[#F1F3F2] transition-colors"
                 />
+                {errors.firstname && (
+                  <p className="mt-1.5 text-xs text-[#B42318] flex items-center gap-1">
+                    <AlertCircle size={13} />
+                    <span>{errors.firstname}</span>
+                  </p>
+                )}
               </div>
 
               <div>
@@ -389,6 +432,12 @@ export default function EditProfilePage() {
                   placeholder="กรอกนามสกุล"
                   className="w-full h-11 px-3.5 bg-white border border-[#CDD2CF] rounded-lg text-sm text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-1 focus:ring-[#2D7048] disabled:bg-[#F1F3F2] transition-colors"
                 />
+                {errors.lastname && (
+                  <p className="mt-1.5 text-xs text-[#B42318] flex items-center gap-1">
+                    <AlertCircle size={13} />
+                    <span>{errors.lastname}</span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -440,6 +489,12 @@ export default function EditProfilePage() {
                   className="w-full pl-10 pr-3 py-2.5 bg-white border border-[#CDD2CF] rounded-lg text-sm text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-1 focus:ring-[#2D7048] disabled:bg-[#F1F3F2] transition-colors resize-none"
                 />
               </div>
+              {errors.address && (
+                <p className="mt-1.5 text-xs text-[#B42318] flex items-center gap-1">
+                  <AlertCircle size={13} />
+                  <span>{errors.address}</span>
+                </p>
+              )}
               <p className="mt-1 text-xs text-[#5A635D]">
                 ข้อมูลที่อยู่นี้จะช่วยในการบันทึกและจัดการพื้นที่เพาะปลูกข้าวของท่าน
               </p>

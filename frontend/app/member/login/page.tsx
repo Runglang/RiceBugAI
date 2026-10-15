@@ -8,6 +8,9 @@ import Cookies from 'js-cookie';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
+const USERNAME_REGEX = /^[a-zA-Z0-9]+$/;
+const PASSWORD_REGEX = /^[a-zA-Z0-9!#_.]+$/;
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -19,6 +22,43 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Username
+    if (!username || username.trim() === '') {
+      setError('กรุณากรอกชื่อผู้ใช้');
+      return;
+    }
+    if (/\s/.test(username)) {
+      setError('ชื่อผู้ใช้ต้องไม่มีช่องว่าง');
+      return;
+    }
+    if (username.length < 3 || username.length > 12) {
+      setError('ชื่อผู้ใช้ต้องมีความยาว 3-12 ตัวอักษร');
+      return;
+    }
+    if (!USERNAME_REGEX.test(username)) {
+      setError('ชื่อผู้ใช้ต้องเป็นตัวอักษรภาษาอังกฤษ (A-Z, a-z) หรือตัวเลข (0-9) เท่านั้น');
+      return;
+    }
+
+    // Password
+    if (!password) {
+      setError('กรุณากรอกรหัสผ่าน');
+      return;
+    }
+    if (/\s/.test(password)) {
+      setError('รหัสผ่านต้องไม่มีช่องว่าง');
+      return;
+    }
+    if (password.length < 8 || password.length > 16) {
+      setError('รหัสผ่านต้องมีความยาว 8-16 ตัวอักษร');
+      return;
+    }
+    if (!PASSWORD_REGEX.test(password)) {
+      setError('รหัสผ่านต้องประกอบด้วยตัวอักษรภาษาอังกฤษ ตัวเลข และอักขระพิเศษ (!, #, _, .) เท่านั้น');
+      return;
+    }
+
     setError(null);
     setIsLoading(true);
 
@@ -77,7 +117,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           <div>
             <label
               htmlFor="username"
@@ -92,6 +132,9 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
+              minLength={3}
+              maxLength={12}
+              pattern="[a-zA-Z0-9]{3,12}"
               disabled={isLoading}
               className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
               placeholder="กรอกชื่อผู้ใช้"
@@ -113,6 +156,9 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={8}
+                maxLength={16}
+                pattern="[a-zA-Z0-9!#_.]{8,16}"
                 disabled={isLoading}
                 className="w-full h-10 pl-3 pr-10 bg-white border border-[#CDD2CF] rounded-md text-[15px] text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
                 placeholder="กรอกรหัสผ่าน"
