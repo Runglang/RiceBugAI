@@ -229,8 +229,8 @@ function EditFieldContent() {
       next.fieldName = 'กรุณาระบุชื่อแปลงหรือสถานที่ปลูกข้าว';
     } else if (/\s/.test(name)) {
       next.fieldName = 'ชื่อแปลงห้ามมีช่องว่าง';
-    } else if (name.length < 3 || name.length > 12) {
-      next.fieldName = 'ชื่อแปลงต้องมีความยาว 3–12 ตัวอักษร';
+    } else if (name.length < 3 || name.length > 20) {
+      next.fieldName = 'ชื่อแปลงต้องมีความยาว 3–20 ตัวอักษร';
     } else if (!/^[A-Za-z0-9\u0E01-\u0E3A\u0E40-\u0E4E]+$/.test(name)) {
       next.fieldName = 'ชื่อแปลงใช้ได้เฉพาะตัวอักษรภาษาอังกฤษ ภาษาไทย และตัวเลข';
     }

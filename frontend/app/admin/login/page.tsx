@@ -8,6 +8,46 @@ import Cookies from 'js-cookie';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
+// ---------- Validation ตาม SRS ----------
+const EMAIL_MAX = 60;
+const PASSWORD_MIN = 8;
+const PASSWORD_MAX = 16;
+
+// รูปแบบอีเมล: ตัวอักษรอังกฤษ ตัวเลข และอักขระที่ใช้ในอีเมลได้ (. _ % + -)
+const EMAIL_REGEX =
+  /^[A-Za-z0-9_%+-]+(\.[A-Za-z0-9_%+-]+)*@[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/;
+
+// รหัสผ่าน: A-Z, a-z, 0-9 และอักขระพิเศษ ! # _ . เท่านั้น
+const PASSWORD_ALLOWED_REGEX = /^[A-Za-z0-9!#_.]+$/;
+
+function validateLoginForm(email: string, password: string): string[] {
+  const errors: string[] = [];
+
+  // อีเมล (ตรวจค่าที่ผู้ใช้กรอกจริง ไม่ trim)
+  if (email === '') {
+    errors.push('อีเมล: กรุณากรอกอีเมล');
+  } else if (/\s/.test(email)) {
+    errors.push('อีเมล: ห้ามมีช่องว่าง');
+  } else if (email.length > EMAIL_MAX) {
+    errors.push(`อีเมล: ต้องมีความยาวไม่เกิน ${EMAIL_MAX} ตัวอักษร`);
+  } else if (!EMAIL_REGEX.test(email)) {
+    errors.push('อีเมล: รูปแบบอีเมลไม่ถูกต้อง (ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษ ตัวเลข และอักขระที่ถูกต้องตามรูปแบบอีเมล)');
+  }
+
+  // รหัสผ่าน (ตรวจค่าที่ผู้ใช้กรอกจริง ไม่ trim)
+  if (password === '') {
+    errors.push('รหัสผ่าน: กรุณากรอกรหัสผ่าน');
+  } else if (/\s/.test(password)) {
+    errors.push('รหัสผ่าน: ห้ามมีช่องว่าง');
+  } else if (password.length < PASSWORD_MIN || password.length > PASSWORD_MAX) {
+    errors.push(`รหัสผ่าน: ต้องมีความยาว ${PASSWORD_MIN}-${PASSWORD_MAX} ตัวอักษร`);
+  } else if (!PASSWORD_ALLOWED_REGEX.test(password)) {
+    errors.push('รหัสผ่าน: ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษ A-Z, a-z ตัวเลข 0-9 และอักขระพิเศษ ! # _ . เท่านั้น');
+  }
+
+  return errors;
+}
+
 export default function AdminLogin() {
   const router = useRouter();
 
@@ -20,6 +60,13 @@ export default function AdminLogin() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+
+    const validationErrors = validateLoginForm(email, password);
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join(' / '));
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -82,7 +129,7 @@ export default function AdminLogin() {
           </div>
         )}
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           <div>
             <label
               htmlFor="email"
@@ -95,10 +142,10 @@ export default function AdminLogin() {
               <input
                 id="email"
                 name="email"
-                type="email"
+                type="text"
+                inputMode="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
                 disabled={isLoading}
                 className="w-full pl-9 pr-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:opacity-60"
                 placeholder="admin@ricebugai.com"
@@ -121,7 +168,6 @@ export default function AdminLogin() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
                 disabled={isLoading}
                 className="w-full pl-9 pr-10 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:opacity-60"
                 placeholder="กรอกรหัสผ่านผู้ดูแลระบบ"
