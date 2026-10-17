@@ -55,6 +55,68 @@ const emptyFormData: InsectFormData = {
   description: '',
 };
 
+const MAX_NAME_LENGTH = 30;
+const MAX_IMAGE_COUNT = 5;
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+// ตัวอักษรไทย (พยัญชนะ สระ วรรณยุกต์) และอังกฤษ ไม่รวมตัวเลขและสัญลักษณ์
+const LETTER = 'A-Za-z\\u0E01-\\u0E3A\\u0E40-\\u0E4E';
+const LETTERS_ONLY_REGEX = new RegExp(`^[${LETTER}]+$`);
+
+function validateInsectForm(
+  data: InsectFormData,
+  existingImageCount: number,
+  newImages: File[]
+): string | null {
+  // insectName
+  if (!data.commonName.trim()) return 'กรุณากรอกชื่อสามัญ';
+  if (!LETTERS_ONLY_REGEX.test(data.commonName)) {
+    return 'ชื่อสามัญต้องเป็นตัวอักษรภาษาไทยหรือภาษาอังกฤษเท่านั้น';
+  }
+  if (data.commonName.length > MAX_NAME_LENGTH) {
+    return `ชื่อสามัญต้องมีความยาวไม่เกิน ${MAX_NAME_LENGTH} ตัวอักษร`;
+  }
+
+  // scientificName
+  if (!data.scientificName.trim()) return 'กรุณากรอกชื่อวิทยาศาสตร์';
+  if (data.scientificName.length > MAX_NAME_LENGTH) {
+    return `ชื่อวิทยาศาสตร์ต้องมีความยาวไม่เกิน ${MAX_NAME_LENGTH} ตัวอักษร`;
+  }
+
+  // insectType
+  if (!data.category.trim()) return 'กรุณากรอกประเภทแมลง';
+  if (!LETTERS_ONLY_REGEX.test(data.category)) {
+    return 'ประเภทแมลงต้องเป็นตัวอักษรภาษาไทยหรือภาษาอังกฤษเท่านั้น';
+  }
+  if (data.category.length > MAX_NAME_LENGTH) {
+    return `ประเภทแมลงต้องมีความยาวไม่เกิน ${MAX_NAME_LENGTH} ตัวอักษร`;
+  }
+
+  // dangerLevel
+  if (!data.dangerLevel) return 'กรุณาเลือกระดับอันตราย';
+
+  // growthStage
+  if (data.selectedStageIDs.length === 0) {
+    return 'กรุณาเลือกระยะการเจริญเติบโตของข้าวอย่างน้อย 1 ระยะ';
+  }
+
+  // รูปภาพ (ต้องเหลือรูปอย่างน้อย 1 รูป รวมรูปเดิมและรูปใหม่ และรวมทั้งหมดไม่เกิน 5 รูป)
+  const totalImages = existingImageCount + newImages.length;
+  if (totalImages === 0) {
+    return 'ต้องมีรูปภาพอย่างน้อย 1 รูป (รวมรูปเดิมและรูปใหม่)';
+  }
+  if (totalImages > MAX_IMAGE_COUNT) {
+    return `รูปภาพรวมทั้งหมดต้องไม่เกิน ${MAX_IMAGE_COUNT} รูป`;
+  }
+  for (const file of newImages) {
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      return `รูปภาพใหม่ "${file.name}" มีขนาดเกิน 5 MB กรุณาเลือกรูปภาพใหม่`;
+    }
+  }
+
+  return null;
+}
+
 function EditInsectForm() {
   const searchParams = useSearchParams();
   const insectId = searchParams.get('insectId') || searchParams.get('id') || undefined;
@@ -186,14 +248,9 @@ function EditInsectForm() {
     e.preventDefault();
     if (!insectId) return;
 
-    if (
-      !formData.commonName ||
-      !formData.scientificName ||
-      !formData.dangerLevel ||
-      !formData.category ||
-      formData.selectedStageIDs.length === 0
-    ) {
-      setStatus({ state: 'error', message: 'กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน' });
+    const validationError = validateInsectForm(formData, existingImageUrls.length, imageFiles);
+    if (validationError) {
+      setStatus({ state: 'error', message: validationError });
       return;
     }
 
@@ -212,13 +269,34 @@ function EditInsectForm() {
       }
 
       if (imageFiles.length > 0) {
+        let failedImageCount = 0;
+        let lastImageError = '';
+
         for (const file of imageFiles) {
           const imgForm = new FormData();
           imgForm.append('image', file);
-          await fetch(`${API_BASE_URL}/${insectId}/image`, {
-            method: 'POST',
-            body: imgForm,
-          }).catch(() => {});
+          try {
+            const imgRes = await fetch(`${API_BASE_URL}/${insectId}/image`, {
+              method: 'POST',
+              body: imgForm,
+            });
+            if (!imgRes.ok) {
+              failedImageCount++;
+              const errText = await imgRes.text().catch(() => '');
+              lastImageError = errText || `HTTP ${imgRes.status}`;
+            }
+          } catch {
+            failedImageCount++;
+            lastImageError = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
+          }
+        }
+
+        if (failedImageCount > 0) {
+          setStatus({
+            state: 'error',
+            message: `อัปเดตข้อมูลแมลงในระบบแล้ว แต่รูปภาพอัปโหลดไม่สำเร็จ (${failedImageCount}/${imageFiles.length} รูป${lastImageError ? `: ${lastImageError}` : ''})`,
+          });
+          return;
         }
       }
 
@@ -285,13 +363,15 @@ function EditInsectForm() {
             label="จัดการรูปภาพสัณฐานวิทยา"
             description="รูปภาพที่มีอยู่ในระบบ และสามารถอัปโหลดรูปภาพใหม่เพิ่มเติมได้"
             mode="multiple"
+            maxFiles={MAX_IMAGE_COUNT}
+            maxSizeBytes={MAX_IMAGE_SIZE_BYTES}
             existingImageUrls={existingImageUrls}
             onExistingRemoveIndex={removeExistingImage}
             selectedFiles={imageFiles}
             previewUrls={imagePreviews}
             onFilesAdd={handleFilesAdd}
             onFileRemoveIndex={removeNewImage}
-            helperText="PNG, JPG, WEBP (รองรับหลายไฟล์)"
+            helperText="PNG, JPG, WEBP (รวมสูงสุด 5 รูป, ไม่เกิน 5MB ต่อรูป)"
           />
         </div>
 

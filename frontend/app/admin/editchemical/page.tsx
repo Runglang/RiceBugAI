@@ -60,6 +60,85 @@ const emptyFormState: FormState = {
   warning: '',
 };
 
+// ---------- Validation ตาม Requirement ----------
+const CHEMICAL_NAME_MAX = 50;
+const ACTIVE_INGREDIENT_MAX = 50;
+const PROPERTY_MAX = 1000;
+const MAX_CHEMICAL_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+
+// เลขจำนวนเต็มหรือทศนิยม เช่น 20, 0.5, 20.25, .5 (ไม่ใช้ parseFloat ตรวจ เพื่อกัน "12abc")
+const NUMERIC_ONLY_REGEX = /^(\d+(\.\d+)?|\.\d+)$/;
+
+function validateChemicalForm(
+  form: FormState,
+  targetInsectCount: number,
+  hasImage: boolean,
+  imageFile: File | null
+): string[] {
+  const errors: string[] = [];
+
+  // รูปภาพบรรจุภัณฑ์สารเคมี (ต้องเหลือรูปอย่างน้อย 1 รูป โดยนับรูปเดิมที่ยังอยู่รวมกับรูปใหม่)
+  if (!hasImage) {
+    errors.push('รูปภาพบรรจุภัณฑ์: ต้องมีรูปภาพอย่างน้อย 1 รูป (สามารถใช้รูปเดิมหรืออัปโหลดรูปใหม่)');
+  } else if (imageFile && imageFile.size > MAX_CHEMICAL_IMAGE_SIZE_BYTES) {
+    errors.push('รูปภาพบรรจุภัณฑ์: ขนาดไฟล์ใหม่ต้องไม่เกิน 10 MB');
+  }
+
+  // ชื่อสารเคมี
+  const name = form.chemicalName.trim();
+  if (!name) {
+    errors.push('ชื่อสารเคมี: กรุณากรอกข้อมูล (ห้ามเว้นว่างหรือมีเพียงช่องว่าง)');
+  } else if (name.length > CHEMICAL_NAME_MAX) {
+    errors.push(`ชื่อสารเคมี: ต้องมีความยาวไม่เกิน ${CHEMICAL_NAME_MAX} ตัวอักษร`);
+  }
+
+  // ส่วนประกอบสำคัญ
+  const ingredient = form.activeIngredient.trim();
+  if (!ingredient) {
+    errors.push('ส่วนประกอบสำคัญ: กรุณากรอกข้อมูล (ห้ามเว้นว่างหรือมีเพียงช่องว่าง)');
+  } else if (ingredient.length > ACTIVE_INGREDIENT_MAX) {
+    errors.push(`ส่วนประกอบสำคัญ: ต้องมีความยาวไม่เกิน ${ACTIVE_INGREDIENT_MAX} ตัวอักษร`);
+  }
+
+  // อัตราปริมาณการใช้ (ตรวจจากข้อความดิบ ไม่ trim)
+  const dosage = form.dosageRate;
+  if (dosage === '') {
+    errors.push('อัตราปริมาณการใช้: กรุณากรอกข้อมูล');
+  } else if (/\s/.test(dosage)) {
+    errors.push('อัตราปริมาณการใช้: ห้ามมีช่องว่าง');
+  } else if (!NUMERIC_ONLY_REGEX.test(dosage)) {
+    errors.push('อัตราปริมาณการใช้: ต้องเป็นตัวเลขเท่านั้น (จำนวนเต็มหรือทศนิยม)');
+  } else if (!(Number(dosage) > 0)) {
+    errors.push('อัตราปริมาณการใช้: ต้องมีค่ามากกว่า 0');
+  }
+
+  // คุณสมบัติและกลไกการออกฤทธิ์
+  const property = form.property.trim();
+  if (!property) {
+    errors.push('คุณสมบัติและกลไกการออกฤทธิ์: กรุณากรอกข้อมูล (ห้ามเว้นว่างหรือมีเพียงช่องว่าง)');
+  } else if (property.length > PROPERTY_MAX) {
+    errors.push(`คุณสมบัติและกลไกการออกฤทธิ์: ต้องมีความยาวไม่เกิน ${PROPERTY_MAX} ตัวอักษร`);
+  }
+
+  // คำแนะนำสำหรับการใช้งาน
+  if (!form.description.trim()) {
+    errors.push('คำแนะนำสำหรับการใช้งานและอัตราผสม: กรุณากรอกข้อมูล (ห้ามเว้นว่างหรือมีเพียงช่องว่าง)');
+  }
+
+  // คำเตือน
+  if (!form.warning.trim()) {
+    errors.push('คำเตือนและข้อควรระวังความปลอดภัย: กรุณากรอกข้อมูล (ห้ามเว้นว่างหรือมีเพียงช่องว่าง)');
+  }
+
+  // ----- เงื่อนไขเดิมที่คงไว้ -----
+  if (!form.toxicityLevel) errors.push('ระดับความเป็นพิษ: กรุณาเลือกระดับ');
+  if (!form.usageMethod) errors.push('วิธีการใช้งาน: กรุณาเลือกวิธีการใช้งาน');
+  if (!form.dosageUnit) errors.push('หน่วยของอัตราปริมาณการใช้: กรุณาเลือกหน่วย');
+  if (targetInsectCount === 0) errors.push('แมลงเป้าหมาย: กรุณาเลือกอย่างน้อย 1 ชนิด');
+
+  return errors;
+}
+
 function EditChemicalForm() {
   const searchParams = useSearchParams();
   const chemicalId = searchParams.get('chemicalId') || searchParams.get('id') || undefined;
@@ -234,21 +313,18 @@ function EditChemicalForm() {
     e.preventDefault();
     if (!chemicalId) return;
 
-    const dosageNumber = parseFloat(formData.dosageRate);
-    if (
-      !formData.chemicalName ||
-      !formData.activeIngredient ||
-      !formData.toxicityLevel ||
-      !formData.usageMethod ||
-      !formData.property ||
-      !formData.description ||
-      !formData.warning ||
-      formData.dosageRate === '' ||
-      !formData.dosageUnit ||
-      Number.isNaN(dosageNumber) ||
-      targetInsects.length === 0
-    ) {
-      setStatus({ state: 'error', message: 'กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง' });
+    const hasImage = Boolean(imageFile || (existingImageUrl && !imageRemoved));
+    const validationErrors = validateChemicalForm(
+      formData,
+      targetInsects.length,
+      hasImage,
+      imageFile
+    );
+    if (validationErrors.length > 0) {
+      setStatus({
+        state: 'error',
+        message: `กรุณาแก้ไขข้อมูลต่อไปนี้: ${validationErrors.join(' / ')}`,
+      });
       return;
     }
 
@@ -277,16 +353,35 @@ function EditChemicalForm() {
           });
           if (!imgRes.ok) {
             const imgErrText = await imgRes.text().catch(() => '');
-            imageWarning = ` (แต่รูปภาพอัปโหลดไม่สำเร็จ: ${imgErrText || `HTTP ${imgRes.status}`})`;
+            imageWarning = imgErrText || `HTTP ${imgRes.status}`;
+          } else {
+            const updatedChemical: ChemicalDTO = await imgRes.json().catch(() => null);
+            if (updatedChemical?.chemicalImg) {
+              setExistingImageUrl(updatedChemical.chemicalImg);
+            }
+            if (imagePreview) {
+              URL.revokeObjectURL(imagePreview);
+            }
+            setImagePreview(null);
+            setImageFile(null);
+            setImageRemoved(false);
           }
         } catch {
-          imageWarning = ' (แต่รูปภาพอัปโหลดไม่สำเร็จ: เชื่อมต่อเซิร์ฟเวอร์ไม่ได้)';
+          imageWarning = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
         }
       }
 
+      if (imageWarning) {
+        setStatus({
+          state: 'error',
+          message: `บันทึกข้อมูลหลักสำเร็จ แต่การเปลี่ยนรูปภาพไม่สำเร็จ (${imageWarning})`,
+        });
+        return;
+      }
+
       setStatus({
-        state: imageWarning ? 'error' : 'success',
-        message: 'อัปเดตข้อมูลสารเคมีสำเร็จ' + imageWarning,
+        state: 'success',
+        message: 'อัปเดตข้อมูลสารเคมีสำเร็จ',
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์';
@@ -442,9 +537,8 @@ function EditChemicalForm() {
               </label>
               <div className="flex gap-2">
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={formData.dosageRate}
                   onChange={(e) => setFormData({ ...formData, dosageRate: e.target.value })}
                   className="flex-1 px-3 py-2 bg-white border border-[#CDD2CF] rounded-md text-xs font-semibold text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6]"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -100,7 +100,14 @@ function AnalysisInsectContent() {
   // Analysis History from Backend API
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisResultDTO[]>([]);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Cleanup previewUrl on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   // 1. Check Session & Load Initial Data
   useEffect(() => {
@@ -192,6 +199,9 @@ function AnalysisInsectContent() {
     }
 
     setSelectedFile(file);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
   };
@@ -201,9 +211,6 @@ function AnalysisInsectContent() {
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
     }
   };
 
@@ -240,6 +247,7 @@ function AnalysisInsectContent() {
 
     setIsAnalyzing(true);
     setErrorMessage(null);
+    setAnalysisResult(null);
 
     try {
       const formData = new FormData();

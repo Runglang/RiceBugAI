@@ -61,6 +61,84 @@ const initialFormState: FormState = {
   warning: '',
 };
 
+// ---------- Validation ตาม SRS ----------
+const CHEMICAL_NAME_MAX = 50;
+const ACTIVE_INGREDIENT_MAX = 50;
+const PROPERTY_MAX = 1000;
+const MAX_CHEMICAL_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+
+// ตัวเลขล้วน จำนวนเต็มหรือทศนิยม (ไม่มีเครื่องหมาย) ไม่ใช้ parseFloat ตรวจ เพื่อกัน "12abc"
+const NUMERIC_ONLY_REGEX = /^(\d+(\.\d+)?|\.\d+)$/;
+
+function validateChemicalForm(
+  form: FormState,
+  targetInsectCount: number,
+  imageFile: File | null
+): string[] {
+  const errors: string[] = [];
+
+  // รูปภาพบรรจุภัณฑ์สารเคมี
+  if (!imageFile) {
+    errors.push('รูปภาพบรรจุภัณฑ์: กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป');
+  } else if (imageFile.size > MAX_CHEMICAL_IMAGE_SIZE_BYTES) {
+    errors.push('รูปภาพบรรจุภัณฑ์: ขนาดไฟล์ต้องไม่เกิน 10 MB');
+  }
+
+  // ชื่อสารเคมี
+  const name = form.chemicalName.trim();
+  if (!name) {
+    errors.push('ชื่อสารเคมี: กรุณากรอกข้อมูล (ห้ามเว้นว่างหรือมีเพียงช่องว่าง)');
+  } else if (name.length > CHEMICAL_NAME_MAX) {
+    errors.push(`ชื่อสารเคมี: ต้องมีความยาวไม่เกิน ${CHEMICAL_NAME_MAX} ตัวอักษร`);
+  }
+
+  // สารสำคัญ
+  const ingredient = form.activeIngredient.trim();
+  if (!ingredient) {
+    errors.push('สารสำคัญ: กรุณากรอกข้อมูล (ห้ามเว้นว่างหรือมีเพียงช่องว่าง)');
+  } else if (ingredient.length > ACTIVE_INGREDIENT_MAX) {
+    errors.push(`สารสำคัญ: ต้องมีความยาวไม่เกิน ${ACTIVE_INGREDIENT_MAX} ตัวอักษร`);
+  }
+
+  // อัตราการใช้งาน (ตรวจจากข้อความดิบ ไม่ trim)
+  const dosage = form.dosageRate;
+  if (dosage === '') {
+    errors.push('อัตราปริมาณการใช้: กรุณากรอกข้อมูล');
+  } else if (/\s/.test(dosage)) {
+    errors.push('อัตราปริมาณการใช้: ห้ามมีช่องว่าง');
+  } else if (!NUMERIC_ONLY_REGEX.test(dosage)) {
+    errors.push('อัตราปริมาณการใช้: ต้องเป็นตัวเลขเท่านั้น (จำนวนเต็มหรือทศนิยม)');
+  } else if (!(Number(dosage) > 0)) {
+    errors.push('อัตราปริมาณการใช้: ต้องมีค่ามากกว่า 0');
+  }
+
+  // สรรพคุณ
+  const property = form.property.trim();
+  if (!property) {
+    errors.push('คุณสมบัติและกลไกการออกฤทธิ์: กรุณากรอกข้อมูล (ห้ามเว้นว่างหรือมีเพียงช่องว่าง)');
+  } else if (property.length > PROPERTY_MAX) {
+    errors.push(`คุณสมบัติและกลไกการออกฤทธิ์: ต้องมีความยาวไม่เกิน ${PROPERTY_MAX} ตัวอักษร`);
+  }
+
+  // คำอธิบายการใช้งาน
+  if (!form.description.trim()) {
+    errors.push('คำแนะนำสำหรับการใช้งานและอัตราผสม: กรุณากรอกข้อมูล (ห้ามเว้นว่างหรือมีเพียงช่องว่าง)');
+  }
+
+  // คำเตือนในการใช้งาน
+  if (!form.warning.trim()) {
+    errors.push('คำเตือนและข้อควรระวังความปลอดภัย: กรุณากรอกข้อมูล (ห้ามเว้นว่างหรือมีเพียงช่องว่าง)');
+  }
+
+  // ----- เงื่อนไขเดิมที่คงไว้ -----
+  if (!form.toxicityLevel) errors.push('ระดับความเป็นพิษ: กรุณาเลือกระดับ');
+  if (!form.usageMethod) errors.push('วิธีการใช้งาน: กรุณาเลือกวิธีการใช้งาน');
+  if (!form.dosageUnit) errors.push('หน่วยของอัตราปริมาณการใช้: กรุณาเลือกหน่วย');
+  if (targetInsectCount === 0) errors.push('แมลงศัตรูพืชเป้าหมาย: กรุณาเลือกอย่างน้อย 1 ชนิด');
+
+  return errors;
+}
+
 export default function AddChemicalPage() {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -183,21 +261,12 @@ export default function AddChemicalPage() {
     e.preventDefault();
     if (status.state === 'loading') return;
 
-    const dosageNumber = parseFloat(formData.dosageRate);
-    if (
-      !formData.chemicalName ||
-      !formData.activeIngredient ||
-      !formData.toxicityLevel ||
-      !formData.usageMethod ||
-      !formData.property ||
-      !formData.description ||
-      !formData.warning ||
-      formData.dosageRate === '' ||
-      !formData.dosageUnit ||
-      Number.isNaN(dosageNumber) ||
-      targetInsects.length === 0
-    ) {
-      setStatus({ state: 'error', message: 'กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วนและถูกต้อง' });
+    const validationErrors = validateChemicalForm(formData, targetInsects.length, imageFile);
+    if (validationErrors.length > 0) {
+      setStatus({
+        state: 'error',
+        message: `กรุณาแก้ไขข้อมูลต่อไปนี้: ${validationErrors.join(' / ')}`,
+      });
       return;
     }
 
@@ -379,9 +448,8 @@ export default function AddChemicalPage() {
               </label>
               <div className="flex gap-2">
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={formData.dosageRate}
                   onChange={(e) => setFormData({ ...formData, dosageRate: e.target.value })}
                   placeholder="เช่น 20"

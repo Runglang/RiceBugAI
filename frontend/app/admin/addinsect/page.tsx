@@ -56,6 +56,66 @@ const initialFormData: InsectFormData = {
   description: '',
 };
 
+const MAX_NAME_LENGTH = 30;
+const MAX_IMAGE_COUNT = 5;
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+// ตัวอักษรไทย (พยัญชนะ สระ วรรณยุกต์) และอังกฤษ ไม่รวมตัวเลขและสัญลักษณ์
+const LETTER = 'A-Za-z\\u0E01-\\u0E3A\\u0E40-\\u0E4E';
+const LETTERS_ONLY_REGEX = new RegExp(`^[${LETTER}]+$`);
+
+function validateInsectForm(data: InsectFormData, images: File[]): string | null {
+  // insectName
+  if (!data.commonName.trim()) return 'กรุณากรอกชื่อสามัญ';
+  if (!LETTERS_ONLY_REGEX.test(data.commonName)) {
+    return 'ชื่อสามัญต้องเป็นตัวอักษรภาษาไทยหรือภาษาอังกฤษเท่านั้น';
+  }
+  if (data.commonName.length > MAX_NAME_LENGTH) {
+    return `ชื่อสามัญต้องมีความยาวไม่เกิน ${MAX_NAME_LENGTH} ตัวอักษร`;
+  }
+
+  // scientificName
+  if (!data.scientificName.trim()) return 'กรุณากรอกชื่อวิทยาศาสตร์';
+  if (data.scientificName.length > MAX_NAME_LENGTH) {
+    return `ชื่อวิทยาศาสตร์ต้องมีความยาวไม่เกิน ${MAX_NAME_LENGTH} ตัวอักษร`;
+  }
+
+  // insectType
+  if (!data.category.trim()) return 'กรุณากรอกประเภทแมลง';
+  if (!LETTERS_ONLY_REGEX.test(data.category)) {
+    return 'ประเภทแมลงต้องเป็นตัวอักษรภาษาไทยหรือภาษาอังกฤษเท่านั้น';
+  }
+  if (data.category.length > MAX_NAME_LENGTH) {
+    return `ประเภทแมลงต้องมีความยาวไม่เกิน ${MAX_NAME_LENGTH} ตัวอักษร`;
+  }
+
+  // dangerLevel
+  if (!data.dangerLevel) return 'กรุณาเลือกระดับอันตราย';
+
+  // growthStage
+  if (data.selectedStageIDs.length === 0) {
+    return 'กรุณาเลือกระยะการเจริญเติบโตของข้าวอย่างน้อย 1 ระยะ';
+  }
+
+  // insectDes
+  if (!data.description.trim()) return 'กรุณากรอกคำอธิบายลักษณะการเข้าทำลายและพฤติกรรม';
+
+  // รูปภาพ
+  if (images.length === 0) {
+    return 'กรุณาอัปโหลดรูปภาพแมลงอย่างน้อย 1 รูป';
+  }
+  if (images.length > MAX_IMAGE_COUNT) {
+    return `สามารถอัปโหลดรูปภาพได้สูงสุด ${MAX_IMAGE_COUNT} รูป`;
+  }
+  for (const file of images) {
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      return `รูปภาพ "${file.name}" มีขนาดเกิน 5 MB กรุณาเลือกรูปภาพใหม่`;
+    }
+  }
+
+  return null;
+}
+
 export default function InsectForm() {
   const [formData, setFormData] = useState<InsectFormData>(initialFormData);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -143,14 +203,9 @@ export default function InsectForm() {
     e.preventDefault();
     if (status.state === 'loading') return;
 
-    if (
-      !formData.commonName ||
-      !formData.scientificName ||
-      !formData.dangerLevel ||
-      !formData.category ||
-      formData.selectedStageIDs.length === 0
-    ) {
-      setStatus({ state: 'error', message: 'กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน' });
+    const validationError = validateInsectForm(formData, imageFiles);
+    if (validationError) {
+      setStatus({ state: 'error', message: validationError });
       return;
     }
 
@@ -248,11 +303,13 @@ export default function InsectForm() {
             label="ภาพตัวอย่างสัณฐานวิทยา"
             description="สามารถอัปโหลดรูปภาพได้หลายรูปสำหรับฐานข้อมูล"
             mode="multiple"
+            maxFiles={MAX_IMAGE_COUNT}
+            maxSizeBytes={MAX_IMAGE_SIZE_BYTES}
             selectedFiles={imageFiles}
             previewUrls={imagePreviews}
             onFilesAdd={handleFilesAdd}
             onFileRemoveIndex={removeImage}
-            helperText="PNG, JPG, WEBP (รองรับหลายไฟล์)"
+            helperText="PNG, JPG, WEBP (สูงสุด 5 รูป, ไม่เกิน 5MB ต่อรูป)"
           />
         </div>
 
@@ -371,7 +428,7 @@ export default function InsectForm() {
             {/* Description */}
             <div className="pt-3 border-t border-[#E3E6E4]">
               <label className="block text-xs font-semibold text-[#1A1F1C] mb-1.5">
-                คำอธิบายลักษณะการเข้าทำลายและพฤติกรรม
+                คำอธิบายลักษณะการเข้าทำลายและพฤติกรรม <span className="text-[#B42318]">*</span>
               </label>
               <textarea
                 rows={3}
