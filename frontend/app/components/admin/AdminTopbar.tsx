@@ -2,19 +2,19 @@
 
 export default function AdminTopbar() {
   return (
-    <header className="flex items-center justify-between px-6 bg-white border-b border-[#E3E6E4] h-14 font-sans shrink-0">
+    <header className="flex items-center justify-between px-6 bg-[#163423] border-b border-[#25593A] h-14 font-sans shrink-0 shadow-xs">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold text-[#1A1F1C]">
+        <span className="text-sm font-semibold text-white">
           ระบบจัดการสารสนเทศแมลงศัตรูพืชและสารเคมีทางการเกษตร
         </span>
       </div>
 
       {/* Right side */}
       <div className="flex items-center gap-3">
-        <span className="bg-[#F1F3F2] text-[#3F4742] text-xs font-medium px-2.5 py-1 rounded-sm border border-[#E3E6E4]">
+        <span className="bg-[#25593A] text-[#E8F6ED] text-xs font-semibold px-2.5 py-1 rounded-sm border border-[#3A8A5B]/50">
           ผู้ดูแลระบบ
         </span>
-        <span className="text-xs text-[#5A635D]">
+        <span className="text-xs text-[#8CC2A1] font-medium">
           เจ้าหน้าที่ระบบ
         </span>
       </div>
