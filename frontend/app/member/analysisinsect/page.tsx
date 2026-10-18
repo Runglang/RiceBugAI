@@ -336,6 +336,9 @@ function AnalysisInsectContent() {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
               วิเคราะห์แมลง
             </h1>
+            <p className="text-sm text-[#5A635D] mt-1">
+              อัปโหลดภาพถ่ายเพื่อวินิจฉัยชนิดแมลงศัตรูข้าวและประเมินระดับความรุนแรงด้วยระบบ AI
+            </p>
           </div>
         </div>
 

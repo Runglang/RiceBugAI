@@ -9,6 +9,7 @@ import {
   Loader2,
   Clock,
   ArrowRight,
+  ChevronLeft,
 } from 'lucide-react';
 
 interface CalculationResultDTO {
@@ -104,6 +105,25 @@ export default function CalculationResultPage() {
   return (
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-4xl mx-auto px-6 pt-8">
+
+        {/* Back Link & Page Header */}
+        <div className="mb-6">
+          <Link
+            href="/member/calculation"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5A635D] hover:text-[#111813] transition-colors mb-3"
+          >
+            <ChevronLeft size={14} />
+            <span>กลับไปหน้าคำนวณเคมี</span>
+          </Link>
+          <div className="pb-4 border-b border-[#E3E6E4]">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
+              ผลการคำนวณปริมาณสารเคมี
+            </h1>
+            <p className="text-sm text-[#5A635D] mt-1">
+              สรุปคำแนะนำปริมาณสารเคมีและอัตราผสมที่เหมาะสมสำหรับแปลงนาของคุณ
+            </p>
+          </div>
+        </div>
 
         {/* Summary Matrix Strip */}
         <div className="bg-white border border-[#E3E6E4] rounded-lg p-5 mb-6">

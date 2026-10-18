@@ -16,6 +16,7 @@ import {
   Lock,
   Eye,
   EyeOff,
+  ChevronLeft,
 } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -328,6 +329,17 @@ export default function EditProfilePage() {
   return (
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8">
+
+        {/* Back Link */}
+        <div className="mb-4">
+          <Link
+            href="/member/dashboard"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5A635D] hover:text-[#111813] transition-colors"
+          >
+            <ChevronLeft size={14} />
+            <span>กลับไปแดชบอร์ด</span>
+          </Link>
+        </div>
 
         {/* Header */}
         <div className="pb-6 mb-8 border-b border-[#E3E6E4]">

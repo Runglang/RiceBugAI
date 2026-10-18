@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Calendar, Loader2, AlertCircle, MapPin, CheckCircle2 } from 'lucide-react';
+import { Calendar, Loader2, AlertCircle, MapPin, CheckCircle2, ChevronLeft } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { getProvinces, getDistricts, getSubdistricts } from '@/app/data/thai_address';
 
@@ -288,14 +288,33 @@ export default function PlantingRecordForm() {
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-2xl mx-auto px-6 pt-8">
 
-        {/* Main Form Card */}
-        <div className="bg-white border border-[#E3E6E4] rounded-lg p-6 sm:p-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-[#1A1F1C]">
-              ลงทะเบียนแปลงนาใหม่
+        {/* Back Link & Page Header */}
+        <div className="mb-6">
+          <Link
+            href="/member/dashboard"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5A635D] hover:text-[#111813] transition-colors mb-3"
+          >
+            <ChevronLeft size={14} />
+            <span>กลับไปแดชบอร์ด</span>
+          </Link>
+          <div className="pb-4 border-b border-[#E3E6E4]">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
+              เพิ่มแปลงนา
             </h1>
             <p className="text-sm text-[#5A635D] mt-1">
               บันทึกข้อมูลแปลงเพาะปลูก ที่ตั้ง และขนาดพื้นที่เพื่อใช้ในการติดตามอายุข้าวและการคำนวณสารเคมี
+            </p>
+          </div>
+        </div>
+
+        {/* Main Form Card */}
+        <div className="bg-white border border-[#E3E6E4] rounded-lg p-6 sm:p-8">
+          <div className="mb-6">
+            <h2 className="text-base font-bold tracking-tight text-[#1A1F1C]">
+              ข้อมูลแปลงเพาะปลูก
+            </h2>
+            <p className="text-xs text-[#5A635D] mt-0.5">
+              กรอกข้อมูลรายละเอียดของแปลงนาเพื่อลงทะเบียนเข้าสู่ระบบ
             </p>
           </div>
 

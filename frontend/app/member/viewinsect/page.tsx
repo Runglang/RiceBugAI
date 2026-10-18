@@ -10,6 +10,7 @@ import {
   AlertCircle,
   X,
   ArrowRight,
+  ChevronLeft,
 } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -139,6 +140,17 @@ function ViewInsectContent() {
   return (
     <div className="min-h-screen bg-[#F8FAF8] text-[#2D3730] font-sans pb-16">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8">
+
+        {/* Back Link */}
+        <div className="mb-4">
+          <Link
+            href="/member/listinsects"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5A635D] hover:text-[#111813] transition-colors"
+          >
+            <ChevronLeft size={14} />
+            <span>กลับไปหน้ารายการแมลง</span>
+          </Link>
+        </div>
 
         {/* Specimen Header Card */}
         <div className="bg-white border border-[#E1E6E2] rounded-xl p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">

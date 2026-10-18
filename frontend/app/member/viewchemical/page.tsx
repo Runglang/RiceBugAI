@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   X,
   ArrowRight,
+  ChevronLeft,
 } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -136,6 +137,17 @@ function ChemicalDetailContent() {
   return (
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-5xl mx-auto px-6 pt-8">
+
+        {/* Back Link */}
+        <div className="mb-4">
+          <Link
+            href="/member/listchemicals"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5A635D] hover:text-[#111813] transition-colors"
+          >
+            <ChevronLeft size={14} />
+            <span>กลับไปหน้ารายการสารเคมี</span>
+          </Link>
+        </div>
 
         <div className="space-y-8">
 
