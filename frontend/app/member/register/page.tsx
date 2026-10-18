@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Check, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import Cookies from 'js-cookie';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -162,10 +163,13 @@ export default function RegisterPage() {
         throw new Error('สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
       }
 
+      const member = await res.json();
+      Cookies.set('member_session', JSON.stringify(member), { expires: 1 });
+
       setSuccess(true);
       setTimeout(() => {
-        router.push('/member/login');
-      }, 1800);
+        router.push('/member/dashboard');
+      }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'สมัครสมาชิกไม่สำเร็จ');
     } finally {
@@ -192,7 +196,7 @@ export default function RegisterPage() {
 
         {success && (
           <div className="mb-4 p-3 rounded-md bg-[#E8F5EC] border border-[#B7DFC6] text-xs text-[#1E7B45] text-center font-medium" role="status">
-            สมัครสมาชิกสำเร็จ! กำลังนำคุณไปยังหน้าเข้าสู่ระบบ...
+            สมัครสมาชิกสำเร็จ! กำลังเข้าสู่ระบบและนำคุณไปยังแดชบอร์ด...
           </div>
         )}
 
