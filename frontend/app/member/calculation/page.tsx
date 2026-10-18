@@ -33,7 +33,7 @@ const EMPTY_FORM: FormData = {
   areaRai: '',
   areaNgan: '',
   areaSqWah: '',
-  waterPerRai: '',
+  waterPerRai: '60',
 };
 
 const emptySubscribe = () => () => {};
@@ -390,13 +390,23 @@ function ChemicalCalculatorContent() {
   return (
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-2xl mx-auto px-6 pt-8">
+        {/* Page Header */}
+        <div className="pb-6 mb-8 border-b border-[#E3E6E4]">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
+            คำนวณปริมาณสารเคมีและอัตราผสม
+          </h1>
+          <p className="text-sm text-[#5A635D] mt-1">
+            คำนวณปริมาณสารเคมี อัตราการผสมต่อน้ำ และคำแนะนำการใช้ตามขนาดแปลงนาจริง
+          </p>
+        </div>
+
         {/* Form Container */}
         <div className="bg-white border border-[#E3E6E4] rounded-lg p-6 sm:p-8">
           <div className="mb-6">
-            <h1 className="text-xl font-bold tracking-tight text-[#1A1F1C]">
-              คำนวณปริมาณสารเคมีและอัตราผสม
-            </h1>
-            <p className="text-sm text-[#5A635D] mt-1">
+            <h2 className="text-base font-bold tracking-tight text-[#1A1F1C]">
+              ข้อมูลศัตรูพืชและขนาดพื้นที่แปลงนา
+            </h2>
+            <p className="text-xs text-[#5A635D] mt-0.5">
               เลือกชนิดศัตรูพืชและระบุขนาดแปลงนาเพื่อรับคำแนะนำปริมาณสารเคมีอย่างแม่นยำ
             </p>
           </div>
