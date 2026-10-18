@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, Pencil, Trash2, Loader2, AlertCircle, Search, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, AlertCircle, Search, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { useToast } from '@/app/components/shared/ToastContext';
 import ConfirmDialog from '@/app/components/shared/ConfirmDialog';
 
@@ -49,7 +49,7 @@ const getUsageMethodLabel = (method: string) => {
   return USAGE_METHOD_LABELS[method.toLowerCase()] || method;
 };
 
-const ROWS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 8;
 
 export default function ChemicalManagement() {
   const router = useRouter();
@@ -195,11 +195,11 @@ export default function ChemicalManagement() {
     });
   }, [chemicals, searchTerm, selectedToxicity, selectedUsageMethod]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredChemicals.length / ROWS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filteredChemicals.length / ITEMS_PER_PAGE));
   const currentPageSafe = Math.min(page, totalPages);
   const pagedChemicals = useMemo(() => {
-    const start = (currentPageSafe - 1) * ROWS_PER_PAGE;
-    return filteredChemicals.slice(start, start + ROWS_PER_PAGE);
+    const start = (currentPageSafe - 1) * ITEMS_PER_PAGE;
+    return filteredChemicals.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredChemicals, currentPageSafe]);
 
   return (
@@ -243,7 +243,7 @@ export default function ChemicalManagement() {
 
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <SlidersHorizontal size={14} className="text-[#5A635D] shrink-0" />
+            <Filter size={14} className="text-[#5A635D] shrink-0" />
             <select
               value={selectedToxicity}
               onChange={(e) => {
@@ -273,10 +273,6 @@ export default function ChemicalManagement() {
               </option>
             ))}
           </select>
-
-          <span className="text-xs font-medium text-[#5A635D] whitespace-nowrap">
-            ทั้งหมด {filteredChemicals.length} รายการ
-          </span>
         </div>
       </div>
 
@@ -299,110 +295,110 @@ export default function ChemicalManagement() {
         </div>
       ) : filteredChemicals.length === 0 ? (
         <div className="py-16 text-center bg-white border border-[#E3E6E4] rounded-lg p-8 text-sm text-[#5A635D]">
-          ไม่พบข้อมูลสารเคมีในระบบ
+          ไม่พบข้อมูลสารเคมีที่ตรงกับเงื่อนไขการค้นหา
         </div>
       ) : (
-        <div className="bg-white border border-[#E3E6E4] rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-[#E3E6E4] bg-[#F7F8F7] text-xs font-semibold text-[#5A635D]">
-                  <th className="py-3 px-4 w-20">ภาพ</th>
-                  <th className="py-3 px-4">ชื่อสารเคมี</th>
-                  <th className="py-3 px-4">สารออกฤทธิ์</th>
-                  <th className="py-3 px-4">อัตราการใช้</th>
-                  <th className="py-3 px-4">ระดับความเป็นพิษ</th>
-                  <th className="py-3 px-4 text-right">การจัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E3E6E4] bg-white text-[#3F4742]">
-                {pagedChemicals.map((chemical) => {
-                  const tox = TOXICITY_BADGE[chemical.toxicityLevel?.toLowerCase()] || {
-                    label: chemical.toxicityLevel || 'ทั่วไป',
-                    className: 'bg-[#F1F3F2] text-[#3F4742] border-[#E3E6E4]',
-                  };
+        <div>
+          {/* Chemical Grid (4 Columns) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+            {pagedChemicals.map((chemical) => {
+              const tox = TOXICITY_BADGE[chemical.toxicityLevel?.toLowerCase()] || {
+                label: chemical.toxicityLevel || 'ทั่วไป',
+                className: 'bg-[#F1F3F2] text-[#3F4742] border-[#E3E6E4]',
+              };
 
-                  return (
-                    <tr key={chemical.chemicalID} className="hover:bg-[#F7F8F7] transition-colors">
-                      <td className="py-3 px-4">
-                        <div className="w-12 h-12 rounded-md border border-[#E3E6E4] overflow-hidden relative bg-[#F1F3F2] flex items-center justify-center">
-                          {chemical.chemicalImg ? (
-                            <Image
-                              src={chemical.chemicalImg}
-                              alt={chemical.chemicalName}
-                              fill
-                              unoptimized
-                              className="object-cover"
-                            />
-                          ) : (
-                            <span className="text-[10px] text-[#9AA29D]">ไม่มีรูป</span>
-                          )}
-                        </div>
-                      </td>
+              return (
+                <div
+                  key={chemical.chemicalID}
+                  className="bg-white hover:border-[#CDD2CF] hover:shadow-xs border border-[#E3E6E4] rounded-lg p-4 flex flex-col justify-between transition-all duration-150"
+                >
+                  <div>
+                    {/* Top Bar */}
+                    <div className="flex items-center justify-between text-xs mb-3">
+                      <span className="text-[13px] font-medium text-[#5A635D] truncate max-w-[130px]">
+                        {getUsageMethodLabel(chemical.usageMethod) || 'สารเคมีกำจัดแมลง'}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-sm border text-xs font-medium shrink-0 ${tox.className}`}>
+                        {tox.label}
+                      </span>
+                    </div>
 
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-[#1A1F1C]">{chemical.chemicalName}</div>
-                      </td>
+                    {/* Image */}
+                    <div className="w-full h-36 bg-[#F1F3F2] rounded-md border border-[#E3E6E4] overflow-hidden mb-3 relative flex items-center justify-center">
+                      {chemical.chemicalImg ? (
+                        <Image
+                          src={chemical.chemicalImg}
+                          alt={chemical.chemicalName}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <span className="text-xs text-[#9AA29D]">ไม่มีรูปภาพ</span>
+                      )}
+                    </div>
 
-                      <td className="py-3 px-4 italic text-[#5A635D]">
-                        {chemical.activeIngredient || '—'}
-                      </td>
+                    {/* Title */}
+                    <h3 className="text-[15px] font-semibold text-[#1A1F1C] leading-snug">
+                      {chemical.chemicalName}
+                    </h3>
+                    <p className="text-xs italic text-[#5A635D] mt-0.5 truncate">
+                      {chemical.activeIngredient || '—'}
+                    </p>
 
-                      <td className="py-3 px-4 font-semibold text-[#1A1F1C] whitespace-nowrap">
-                        {chemical.dosageRate} {chemical.dosageUnit}
-                      </td>
+                    {/* Description */}
+                    <p className="text-xs text-[#3F4742] line-clamp-2 mt-2 leading-relaxed">
+                      {chemical.property || chemical.description || 'ไม่มีคำอธิบายเพิ่มเติม'}
+                    </p>
+                  </div>
 
-                      <td className="py-3 px-4">
-                        <span className={`inline-block px-2 py-0.5 rounded-sm text-[11px] font-medium border whitespace-nowrap ${tox.className}`}>
-                          {tox.label}
-                        </span>
-                      </td>
+                  {/* Actions & Meta */}
+                  <div className="mt-4 pt-3 border-t border-[#E3E6E4] flex items-center justify-between">
+                    <span className="text-xs text-[#5A635D] truncate max-w-[120px]" title={`อัตรา ${chemical.dosageRate} ${chemical.dosageUnit}`}>
+                      {chemical.dosageRate} {chemical.dosageUnit}
+                    </span>
 
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => router.push(`/admin/editchemical?chemicalId=${chemical.chemicalID}`)}
-                            className="p-1.5 rounded-md bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] transition-colors cursor-pointer"
-                            title="แก้ไขข้อมูล"
-                          >
-                            <Pencil size={13} />
-                          </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => router.push(`/admin/editchemical?chemicalId=${chemical.chemicalID}`)}
+                        className="p-1.5 rounded-md bg-white hover:bg-[#F1F3F2] border border-[#CDD2CF] text-[#1A1F1C] transition-colors cursor-pointer"
+                        title="แก้ไขข้อมูล"
+                      >
+                        <Pencil size={13} />
+                      </button>
 
-                          <button
-                            onClick={() => handleDelete(chemical.chemicalID, chemical.chemicalName)}
-                            disabled={deletingId === chemical.chemicalID}
-                            className="p-1.5 rounded-md bg-white hover:bg-[#FDECEA] border border-[#CDD2CF] hover:border-[#F4B9B3] text-[#5A635D] hover:text-[#B42318] transition-colors disabled:opacity-50 cursor-pointer"
-                            title="ลบข้อมูล"
-                          >
-                            {deletingId === chemical.chemicalID ? (
-                              <Loader2 size={13} className="animate-spin text-[#B42318]" />
-                            ) : (
-                              <Trash2 size={13} />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      <button
+                        onClick={() => handleDelete(chemical.chemicalID, chemical.chemicalName)}
+                        disabled={deletingId === chemical.chemicalID}
+                        className="p-1.5 rounded-md bg-white hover:bg-[#FDECEA] border border-[#CDD2CF] hover:border-[#F4B9B3] text-[#5A635D] hover:text-[#B42318] transition-colors disabled:opacity-50 cursor-pointer"
+                        title="ลบข้อมูล"
+                      >
+                        {deletingId === chemical.chemicalID ? (
+                          <Loader2 size={13} className="animate-spin text-[#B42318]" />
+                        ) : (
+                          <Trash2 size={13} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Pagination */}
+          {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="p-4 bg-[#F7F8F7] border-t border-[#E3E6E4] flex items-center justify-between">
-              <span className="text-xs text-[#5A635D]">
-                แสดง {(currentPageSafe - 1) * ROWS_PER_PAGE + 1} - {Math.min(currentPageSafe * ROWS_PER_PAGE, filteredChemicals.length)} จาก {filteredChemicals.length} รายการ
-              </span>
-
-              <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-between pt-4 border-t border-[#E3E6E4] text-sm text-[#5A635D]">
+              <div>
+                แสดง {(currentPageSafe - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPageSafe * ITEMS_PER_PAGE, filteredChemicals.length)} จาก {filteredChemicals.length} รายการ
+              </div>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={currentPageSafe === 1}
-                  className="p-1.5 bg-white hover:bg-[#F1F3F2] disabled:opacity-40 border border-[#CDD2CF] rounded-md text-[#1A1F1C] transition-colors cursor-pointer"
+                  className="p-2 bg-white hover:bg-[#F1F3F2] disabled:opacity-40 border border-[#CDD2CF] rounded-md text-[#1A1F1C] transition-colors cursor-pointer"
                 >
-                  <ChevronLeft size={15} />
+                  <ChevronLeft size={16} />
                 </button>
                 <span className="text-xs font-medium text-[#1A1F1C] px-2">
                   {currentPageSafe} / {totalPages}
@@ -410,9 +406,9 @@ export default function ChemicalManagement() {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPageSafe === totalPages}
-                  className="p-1.5 bg-white hover:bg-[#F1F3F2] disabled:opacity-40 border border-[#CDD2CF] rounded-md text-[#1A1F1C] transition-colors cursor-pointer"
+                  className="p-2 bg-white hover:bg-[#F1F3F2] disabled:opacity-40 border border-[#CDD2CF] rounded-md text-[#1A1F1C] transition-colors cursor-pointer"
                 >
-                  <ChevronRight size={15} />
+                  <ChevronRight size={16} />
                 </button>
               </div>
             </div>
