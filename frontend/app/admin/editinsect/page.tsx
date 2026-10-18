@@ -2,8 +2,9 @@
 
 import { useState, useEffect, FormEvent, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import ImageUpload from '@/app/components/shared/ImageUpload';
-import { Save, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Save, Loader2, AlertCircle, CheckCircle2, ChevronLeft } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const API_BASE_URL = `${API_ORIGIN}/api/v1/insects`;
@@ -355,6 +356,25 @@ function EditInsectForm() {
   return (
     <div className="space-y-6 font-sans">
 
+      {/* Back Link & Page Header */}
+      <div>
+        <Link
+          href="/admin/listadmininsects"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5A635D] hover:text-[#111813] transition-colors mb-3"
+        >
+          <ChevronLeft size={14} />
+          <span>กลับไปหน้ารายการแมลง</span>
+        </Link>
+        <div className="pb-6 border-b border-[#E3E6E4]">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
+            แก้ไขข้อมูลแมลงศัตรูข้าว
+          </h1>
+          <p className="text-sm text-[#5A635D] mt-1">
+            ปรับปรุงรายละเอียดข้อมูลสัณฐานวิทยา รูปภาพตัวอย่าง และระยะการเข้าทำลาย
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
 
         {/* Left Column: Image Management */}
@@ -378,9 +398,9 @@ function EditInsectForm() {
         {/* Right Column: Taxonomy Details */}
         <div className="md:col-span-7 bg-white border border-[#E3E6E4] rounded-lg p-6">
           <div className="mb-6">
-            <h1 className="text-lg font-bold tracking-tight text-[#1A1F1C]">
+            <h2 className="text-lg font-bold tracking-tight text-[#1A1F1C]">
               แก้ไขข้อมูลสัณฐานวิทยาและชีววิทยา
-            </h1>
+            </h2>
             <p className="text-xs text-[#5A635D] mt-1">
               ปรับปรุงรายละเอียดทางอนุกรมวิธานและระยะการเข้าทำลาย
             </p>

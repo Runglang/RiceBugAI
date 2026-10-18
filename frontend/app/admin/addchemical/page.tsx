@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
 import Link from 'next/link';
 import ImageUpload from '@/app/components/shared/ImageUpload';
-import { Save, Loader2, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { Save, Loader2, AlertCircle, CheckCircle2, X, ChevronLeft } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const CHEMICALS_API_URL = `${API_ORIGIN}/api/v1/chemicals`;
@@ -349,6 +349,25 @@ export default function AddChemicalPage() {
   return (
     <div className="space-y-6 font-sans">
 
+      {/* Back Link & Page Header */}
+      <div>
+        <Link
+          href="/admin/listadminchemicals"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5A635D] hover:text-[#111813] transition-colors mb-3"
+        >
+          <ChevronLeft size={14} />
+          <span>กลับไปหน้ารายการสารเคมี</span>
+        </Link>
+        <div className="pb-6 border-b border-[#E3E6E4]">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
+            เพิ่มสารเคมีใหม่
+          </h1>
+          <p className="text-sm text-[#5A635D] mt-1">
+            ลงทะเบียนข้อมูลสารเคมีป้องกันกำจัดแมลง สารออกฤทธิ์ อัตราการใช้ และคำแนะนำความปลอดภัย
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
 
         {/* Left Column: Image Upload */}
@@ -369,9 +388,9 @@ export default function AddChemicalPage() {
         {/* Right Column: Chemical Form */}
         <div className="md:col-span-7 bg-white border border-[#E3E6E4] rounded-lg p-6">
           <div className="mb-6">
-            <h1 className="text-lg font-bold tracking-tight text-[#1A1F1C]">
+            <h2 className="text-lg font-bold tracking-tight text-[#1A1F1C]">
               ข้อมูลทะเบียนสารเคมีเกษตร
-            </h1>
+            </h2>
             <p className="text-xs text-[#5A635D] mt-1">
               กรอกข้อมูลสูตร สารออกฤทธิ์ และอัตราการใช้ตามคำแนะนำ
             </p>
