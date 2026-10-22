@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ImageUpload from '@/app/components/shared/ImageUpload';
 import { Save, Loader2, AlertCircle, CheckCircle2, X, ChevronLeft } from 'lucide-react';
@@ -62,8 +63,8 @@ const initialFormState: FormState = {
 };
 
 // ---------- Validation ตาม SRS ----------
-const CHEMICAL_NAME_MAX = 50;
-const ACTIVE_INGREDIENT_MAX = 50;
+const CHEMICAL_NAME_MAX = 100;
+const ACTIVE_INGREDIENT_MAX = 100;
 const PROPERTY_MAX = 1000;
 const MAX_CHEMICAL_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -140,6 +141,7 @@ function validateChemicalForm(
 }
 
 export default function AddChemicalPage() {
+  const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<FormState>(initialFormState);
@@ -333,10 +335,7 @@ export default function AddChemicalPage() {
       }
 
       // Case 3: Image upload succeeded, or no image selected
-      setStatus({
-        state: 'success',
-        message: 'บันทึกข้อมูลสารเคมีลงฐานข้อมูลสำเร็จ',
-      });
+      router.push('/admin/listadminchemicals');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์';
       setStatus({ state: 'error', message });

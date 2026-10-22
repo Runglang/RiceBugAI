@@ -38,6 +38,8 @@ public class FieldService {
                 .province(dto.getProvince())
                 .district(dto.getDistrict())
                 .subdistrict(dto.getSubdistrict())
+                .latitude(dto.getLatitude())
+                .longitude(dto.getLongitude())
                 .member(member)
                 .build();
 
@@ -93,6 +95,12 @@ public class FieldService {
         if (dto.getSubdistrict() != null) {
             field.setSubdistrict(dto.getSubdistrict());
         }
+        if (dto.getLatitude() != null) {
+            field.setLatitude(dto.getLatitude());
+        }
+        if (dto.getLongitude() != null) {
+            field.setLongitude(dto.getLongitude());
+        }
 
         return toDTO(fieldRepository.save(field));
     }
@@ -125,6 +133,8 @@ public class FieldService {
                 .province(field.getProvince())
                 .district(field.getDistrict())
                 .subdistrict(field.getSubdistrict())
+                .latitude(field.getLatitude())
+                .longitude(field.getLongitude())
                 .memberID(field.getMember() != null ? field.getMember().getMemberID() : null)
                 .riceAge(riceAge)
                 .currentGrowthStage(currentStage)

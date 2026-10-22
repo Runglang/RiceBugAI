@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -18,6 +18,11 @@ import {
   ShieldAlert,
   Sparkles,
   Layers,
+  Camera,
+  X,
+  RefreshCw,
+  Check,
+  ChevronLeft,
 } from 'lucide-react';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -99,6 +104,103 @@ function AnalysisInsectContent() {
 
   // Analysis History from Backend API
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisResultDTO[]>([]);
+
+  // Camera State
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [capturedImageUrl, setCapturedImageUrl] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Stop all media tracks helper
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
+
+  // Open camera
+  const handleOpenCamera = useCallback(async () => {
+    setCameraError(null);
+    setCapturedImageUrl(null);
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError('เบราว์เซอร์ของคุณไม่รองรับการเข้าถึงกล้อง กรุณาใช้เบราว์เซอร์อื่นหรือเลือกรูปจากอุปกรณ์แทน');
+      return;
+    }
+
+    setIsCameraOpen(true);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      let message = 'ไม่สามารถเปิดกล้องได้ กรุณาลองใหม่อีกครั้ง';
+      if (err instanceof DOMException) {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          message = 'คุณไม่ได้อนุญาตให้ใช้กล้อง กรุณาอนุญาตการเข้าถึงกล้องในการตั้งค่าเบราว์เซอร์แล้วลองใหม่';
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          message = 'ไม่พบกล้องบนอุปกรณ์นี้ กรุณาเลือกรูปจากอุปกรณ์แทน';
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          message = 'กล้องถูกใช้งานโดยแอปอื่นอยู่ กรุณาปิดแอปอื่นแล้วลองใหม่';
+        } else if (err.name === 'OverconstrainedError') {
+          message = 'กล้องหลังไม่พร้อมใช้งาน กรุณาเลือกรูปจากอุปกรณ์แทน';
+        }
+      }
+      setCameraError(message);
+      setIsCameraOpen(false);
+      stopCamera();
+    }
+  }, [stopCamera]);
+
+  // Close camera
+  const handleCloseCamera = useCallback(() => {
+    stopCamera();
+    setIsCameraOpen(false);
+    setCameraError(null);
+    setCapturedImageUrl(null);
+  }, [stopCamera]);
+
+  // Capture photo from video
+  const handleCapturePhoto = useCallback(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    setCapturedImageUrl(dataUrl);
+
+    // Pause the video stream while previewing captured image
+    stopCamera();
+  }, [stopCamera]);
+
+  // Retake photo — reopen the camera stream
+  const handleRetakePhoto = useCallback(() => {
+    setCapturedImageUrl(null);
+    // Reopen the camera
+    handleOpenCamera();
+  }, [handleOpenCamera]);
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
 
   // Cleanup previewUrl on unmount
   useEffect(() => {
@@ -182,7 +284,7 @@ function AnalysisInsectContent() {
   }, [fields, analysisResult]);
 
   // File Handlers
-  const handleFileChange = (file: File | null) => {
+  const handleFileChange = useCallback((file: File | null) => {
     setErrorMessage(null);
     if (!file) return;
 
@@ -199,12 +301,35 @@ function AnalysisInsectContent() {
     }
 
     setSelectedFile(file);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+  }, []);
+
+  // Use the captured photo — convert data URL to File and feed into existing flow
+  const handleUseCapturedPhoto = useCallback(() => {
+    if (!capturedImageUrl) return;
+
+    // Convert data URL to Blob
+    const parts = capturedImageUrl.split(',');
+    const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bstr = atob(parts[1]);
+    const u8arr = new Uint8Array(bstr.length);
+    for (let i = 0; i < bstr.length; i++) {
+      u8arr[i] = bstr.charCodeAt(i);
     }
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-  };
+    const blob = new Blob([u8arr], { type: mime });
+    const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+    // Feed into existing handleFileChange
+    handleFileChange(file);
+
+    // Close camera mode
+    setIsCameraOpen(false);
+    setCapturedImageUrl(null);
+    setCameraError(null);
+  }, [capturedImageUrl, handleFileChange]);
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
@@ -330,9 +455,16 @@ function AnalysisInsectContent() {
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
 
-        {/* Header */}
-        <div className="pb-6 mb-8 border-b border-[#E3E6E4] flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+        {/* Back Link & Page Header */}
+        <div className="mb-6">
+          <Link
+            href="/member/dashboard"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5A635D] hover:text-[#111813] transition-colors mb-3"
+          >
+            <ChevronLeft size={14} />
+            <span>กลับไปแดชบอร์ด</span>
+          </Link>
+          <div className="pb-4 border-b border-[#E3E6E4]">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
               วิเคราะห์แมลง
             </h1>
@@ -691,21 +823,124 @@ function AnalysisInsectContent() {
                 )}
               </div>
 
-              {/* 3. Drag and Drop Image Upload Zone */}
+              {/* 3. Image Source: Upload or Camera */}
               <div className="space-y-0">
-                <ImageUpload
-                  label="รูปภาพแมลงศัตรูพืช"
-                  description="อัปโหลดภาพถ่ายจากแปลงนาเพื่อส่งให้ AI ประเมินและจำแนกชนิด"
-                  accept="image/jpeg,image/png,image/jpg,image/webp"
-                  maxSizeBytes={5 * 1024 * 1024}
-                  helperText="รองรับไฟล์ JPG, PNG, WEBP (สูงสุด 5MB)"
-                  mode="single"
-                  selectedFile={selectedFile}
-                  previewUrl={previewUrl}
-                  onFileSelect={(file) => handleFileChange(file)}
-                  onFileRemove={handleRemoveFile}
-                  disabled={isAnalyzing}
-                />
+
+                {/* Camera Mode UI */}
+                {isCameraOpen ? (
+                  <div className="bg-white border border-[#E3E6E4] rounded-xl overflow-hidden shadow-xs">
+                    {/* Camera Header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#E3E6E4] bg-[#F7F8F7]">
+                      <div className="flex items-center gap-2">
+                        <Camera size={16} className="text-[#2D7048]" />
+                        <span className="text-sm font-semibold text-[#1A1F1C]">ถ่ายภาพจากกล้อง</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCloseCamera}
+                        className="p-1.5 rounded-md hover:bg-[#E3E6E4] text-[#5A635D] hover:text-[#1A1F1C] transition-colors cursor-pointer"
+                        title="ปิดกล้อง"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+
+                    {/* Camera Viewfinder / Captured Preview */}
+                    <div className="relative w-full bg-black" style={{ aspectRatio: '4/3' }}>
+                      {capturedImageUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={capturedImageUrl}
+                          alt="ภาพที่ถ่าย"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+
+                    {/* Camera Controls */}
+                    <div className="px-4 py-4 flex items-center justify-center gap-4 bg-[#F7F8F7] border-t border-[#E3E6E4]">
+                      {capturedImageUrl ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleRetakePhoto}
+                            className="inline-flex items-center gap-1.5 px-4 h-10 text-xs font-semibold text-[#1A1F1C] bg-white border border-[#CDD2CF] rounded-lg hover:bg-[#F1F3F2] transition-colors cursor-pointer"
+                          >
+                            <RefreshCw size={14} />
+                            <span>ถ่ายใหม่</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleUseCapturedPhoto}
+                            className="inline-flex items-center gap-1.5 px-5 h-10 text-xs font-semibold text-white bg-[#2D7048] hover:bg-[#25593A] rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Check size={14} />
+                            <span>ใช้ภาพนี้</span>
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleCapturePhoto}
+                          className="w-16 h-16 rounded-full bg-white border-4 border-[#2D7048] hover:border-[#25593A] flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                          title="ถ่ายภาพ"
+                        >
+                          <div className="w-12 h-12 rounded-full bg-[#2D7048] hover:bg-[#25593A] transition-colors" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* Existing Image Upload + Camera Button */
+                  <>
+                    <ImageUpload
+                      label="รูปภาพแมลงศัตรูพืช"
+                      description="อัปโหลดภาพถ่ายจากแปลงนาเพื่อส่งให้ AI ประเมินและจำแนกชนิด"
+                      accept="image/jpeg,image/png,image/jpg,image/webp"
+                      maxSizeBytes={5 * 1024 * 1024}
+                      helperText="รองรับไฟล์ JPG, PNG, WEBP (สูงสุด 5MB)"
+                      mode="single"
+                      selectedFile={selectedFile}
+                      previewUrl={previewUrl}
+                      onFileSelect={(file) => handleFileChange(file)}
+                      onFileRemove={handleRemoveFile}
+                      disabled={isAnalyzing}
+                    />
+
+                    {/* Camera Button — shown when no file is selected and not analyzing */}
+                    {!selectedFile && !isAnalyzing && (
+                      <div className="flex items-center justify-center pt-3">
+                        <button
+                          type="button"
+                          onClick={handleOpenCamera}
+                          className="inline-flex items-center gap-2 px-4 h-10 text-xs font-semibold text-[#2D7048] bg-[#E8F5EC] border border-[#B7DFC6] hover:bg-[#D6EDDD] rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Camera size={16} />
+                          <span>ถ่ายภาพจากกล้อง</span>
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Camera Error Message */}
+                {cameraError && !isCameraOpen && (
+                  <div className="mt-3 flex items-start gap-2 text-xs text-[#B42318] bg-[#FDECEA] border border-[#F4B9B3] p-3 rounded-lg">
+                    <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                    <span>{cameraError}</span>
+                  </div>
+                )}
+
+                {/* Hidden canvas for capturing photo */}
+                <canvas ref={canvasRef} className="hidden" />
 
                 {/* Photography Guidelines Card (Directly attached under Upload Box) */}
                 <div className="bg-[#F8FAF8] border border-t-0 border-[#E1E6E2] rounded-b-xl p-4 space-y-2 text-xs text-[#65716A]">

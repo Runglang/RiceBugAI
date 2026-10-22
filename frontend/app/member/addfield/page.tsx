@@ -1,11 +1,26 @@
 'use client';
 
 import { useState, useEffect, useMemo, useSyncExternalStore } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, Loader2, AlertCircle, MapPin, CheckCircle2, ChevronLeft } from 'lucide-react';
 import Cookies from 'js-cookie';
-import { getProvinces, getDistricts, getSubdistricts } from '@/app/data/thai_address';
+import { getProvinces } from '@/app/data/thai_address';
+import type { AddressComponents, LocationCoords } from '@/app/components/member/FieldLocationMap';
+
+const FieldLocationMap = dynamic(
+  () => import('@/app/components/member/FieldLocationMap'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-72 sm:h-80 bg-[#F1F3F2] rounded-md border border-[#CDD2CF] flex items-center justify-center text-xs text-[#5A635D] gap-2">
+        <Loader2 size={16} className="animate-spin text-[#2D7048]" />
+        <span>กำลังโหลดแผนที่...</span>
+      </div>
+    ),
+  }
+);
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -18,6 +33,8 @@ export interface PlantingRecordFormData {
   province: string;
   district: string;
   subdistrict: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 const EMPTY_FORM: PlantingRecordFormData = {
@@ -29,6 +46,8 @@ const EMPTY_FORM: PlantingRecordFormData = {
   province: '',
   district: '',
   subdistrict: '',
+  latitude: null,
+  longitude: null,
 };
 
 const emptySubscribe = () => () => {};
@@ -60,8 +79,6 @@ export default function PlantingRecordForm() {
   }, [sessionCookie]);
 
   const provinces = useMemo(() => getProvinces(), []);
-  const districts = useMemo(() => getDistricts(form.province), [form.province]);
-  const subdistricts = useMemo(() => getSubdistricts(form.province, form.district), [form.province, form.district]);
 
   useEffect(() => {
     const session = Cookies.get('member_session');
@@ -113,54 +130,25 @@ export default function PlantingRecordForm() {
     });
   };
 
-  const handleProvinceChange = (province: string) => {
-    setSuccessMessage(null);
-    setApiError(null);
+  const handleAddressDetected = (
+    address: AddressComponents,
+    coords: LocationCoords
+  ) => {
     setForm((prev) => ({
       ...prev,
-      province,
-      district: '',
-      subdistrict: '',
+      province: address.province || prev.province,
+      district: address.district || prev.district,
+      subdistrict: address.subdistrict || prev.subdistrict,
+      latitude: coords.lat,
+      longitude: coords.lng,
     }));
     setErrors((prev) => {
       const next = { ...prev };
-      delete next.province;
-      delete next.district;
-      delete next.subdistrict;
+      if (address.province) delete next.province;
+      if (address.district) delete next.district;
+      if (address.subdistrict) delete next.subdistrict;
       return next;
     });
-  };
-
-  const handleDistrictChange = (district: string) => {
-    setSuccessMessage(null);
-    setApiError(null);
-    setForm((prev) => ({
-      ...prev,
-      district,
-      subdistrict: '',
-    }));
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next.district;
-      delete next.subdistrict;
-      return next;
-    });
-  };
-
-  const handleSubdistrictChange = (subdistrict: string) => {
-    setSuccessMessage(null);
-    setApiError(null);
-    setForm((prev) => ({
-      ...prev,
-      subdistrict,
-    }));
-    if (errors.subdistrict) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next.subdistrict;
-        return next;
-      });
-    }
   };
 
   const validate = (): boolean => {
@@ -228,18 +216,41 @@ export default function PlantingRecordForm() {
       }
     }
 
-    if (!form.province) {
-      next.province = 'กรุณาเลือกจังหวัดที่ตั้งแปลงนา';
+    if (!form.province?.trim()) {
+      next.province = 'กรุณาระบุจังหวัดที่ตั้งแปลงนา (เลือกจากแผนที่หรือพิมพ์ระบุ)';
     }
-    if (!form.district) {
-      next.district = 'กรุณาเลือกอำเภอ/เขตที่ตั้งแปลงนา';
+    if (!form.district?.trim()) {
+      next.district = 'กรุณาระบุอำเภอ/เขตที่ตั้งแปลงนา';
     }
-    if (!form.subdistrict) {
-      next.subdistrict = 'กรุณาเลือกตำบล/แขวงที่ตั้งแปลงนา';
+    if (!form.subdistrict?.trim()) {
+      next.subdistrict = 'กรุณาระบุตำบล/แขวงที่ตั้งแปลงนา';
     }
 
     setErrors(next);
     return Object.keys(next).length === 0;
+  };
+
+  const handleConfirmLocation = (
+    coords: LocationCoords | null,
+    address?: AddressComponents | null
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      latitude: coords ? coords.lat : null,
+      longitude: coords ? coords.lng : null,
+      ...(address?.province ? { province: address.province } : {}),
+      ...(address?.district ? { district: address.district } : {}),
+      ...(address?.subdistrict ? { subdistrict: address.subdistrict } : {}),
+    }));
+    if (address?.province) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (address.province) delete next.province;
+        if (address.district) delete next.district;
+        if (address.subdistrict) delete next.subdistrict;
+        return next;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -258,9 +269,11 @@ export default function PlantingRecordForm() {
         areaRai: form.areaRai ? Math.floor(form.areaRai) : 0,
         areaNgan: form.areaNgan ? Math.floor(form.areaNgan) : 0,
         areaSqWah: form.areaSqWah ? Math.floor(form.areaSqWah) : 0,
-        province: form.province,
-        district: form.district,
-        subdistrict: form.subdistrict,
+        province: form.province.trim(),
+        district: form.district.trim(),
+        subdistrict: form.subdistrict.trim(),
+        latitude: form.latitude ?? null,
+        longitude: form.longitude ?? null,
       };
 
       const res = await fetch(`${API_URL}/api/v1/members/${memberID}/fields`, {
@@ -338,7 +351,7 @@ export default function PlantingRecordForm() {
               )}
             </div>
 
-            {/* Field 2: Cascading Address Dropdowns (Province -> District -> Subdistrict) */}
+            {/* Field 2: Address & Location Map (Approach B: Auto-filled from map or manual entry) */}
             <div className="pt-2 border-t border-[#E3E6E4]">
               <div className="flex items-center gap-1.5 mb-1">
                 <MapPin size={16} className="text-[#2D7048]" />
@@ -347,78 +360,77 @@ export default function PlantingRecordForm() {
                 </label>
               </div>
               <p className="text-xs text-[#5A635D] mb-3">
-                เลือกจังหวัด อำเภอ และตำบลที่ตั้งของแปลงนาข้าว
+                ระบบจะเติมจังหวัด อำเภอ และตำบลให้อัตโนมัติเมื่อเลือกตำแหน่งบนแผนที่ หรือสามารถกรอก/แก้ไขข้อมูลเองได้
               </p>
 
+              {/* Map: Search, Pin, and GPS Location */}
+              <div className="mb-4">
+                <FieldLocationMap
+                  initialLat={form.latitude}
+                  initialLng={form.longitude}
+                  onAddressDetected={handleAddressDetected}
+                  onConfirmLocation={handleConfirmLocation}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              {/* Review & Manual Override Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Province Dropdown */}
+                {/* Province Input */}
                 <div>
                   <label className="block text-xs text-[#5A635D] mb-1">
                     จังหวัด <span className="text-[#B42318]">*</span>
                   </label>
-                  <select
+                  <input
+                    type="text"
+                    list="provinces-list"
                     value={form.province}
-                    onChange={(e) => handleProvinceChange(e.target.value)}
+                    onChange={(e) => handleFieldChange('province', e.target.value)}
+                    placeholder="เช่น พิษณุโลก"
                     disabled={isSubmitting}
-                    className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-sm text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
-                  >
-                    <option value="">— เลือกจังหวัด —</option>
+                    className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-sm text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
+                  />
+                  <datalist id="provinces-list">
                     {provinces.map((prov) => (
-                      <option key={prov} value={prov}>
-                        {prov}
-                      </option>
+                      <option key={prov} value={prov} />
                     ))}
-                  </select>
+                  </datalist>
                   {errors.province && (
                     <p className="mt-1 text-xs text-[#B42318]">{errors.province}</p>
                   )}
                 </div>
 
-                {/* District Dropdown */}
+                {/* District Input */}
                 <div>
                   <label className="block text-xs text-[#5A635D] mb-1">
                     อำเภอ / เขต <span className="text-[#B42318]">*</span>
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={form.district}
-                    onChange={(e) => handleDistrictChange(e.target.value)}
-                    disabled={!form.province || isSubmitting}
-                    className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-sm text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2] disabled:cursor-not-allowed"
-                  >
-                    <option value="">
-                      {!form.province ? '— กรุณาเลือกจังหวัดก่อน —' : '— เลือกอำเภอ/เขต —'}
-                    </option>
-                    {districts.map((dist) => (
-                      <option key={dist} value={dist}>
-                        {dist}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(e) => handleFieldChange('district', e.target.value)}
+                    placeholder="เช่น เมืองพิษณุโลก"
+                    disabled={isSubmitting}
+                    className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-sm text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
+                  />
                   {errors.district && (
                     <p className="mt-1 text-xs text-[#B42318]">{errors.district}</p>
                   )}
                 </div>
 
-                {/* Subdistrict Dropdown */}
+                {/* Subdistrict Input */}
                 <div>
                   <label className="block text-xs text-[#5A635D] mb-1">
                     ตำบล / แขวง <span className="text-[#B42318]">*</span>
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={form.subdistrict}
-                    onChange={(e) => handleSubdistrictChange(e.target.value)}
-                    disabled={!form.district || isSubmitting}
-                    className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-sm text-[#1A1F1C] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2] disabled:cursor-not-allowed"
-                  >
-                    <option value="">
-                      {!form.district ? '— กรุณาเลือกอำเภอก่อน —' : '— เลือกตำบล/แขวง —'}
-                    </option>
-                    {subdistricts.map((sub) => (
-                      <option key={sub} value={sub}>
-                        {sub}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(e) => handleFieldChange('subdistrict', e.target.value)}
+                    placeholder="เช่น ในเมือง"
+                    disabled={isSubmitting}
+                    className="w-full h-10 px-3 bg-white border border-[#CDD2CF] rounded-md text-sm text-[#1A1F1C] placeholder-[#9AA29D] focus:outline-none focus:border-[#2D7048] focus:ring-2 focus:ring-[#B9DBC6] disabled:bg-[#F1F3F2]"
+                  />
                   {errors.subdistrict && (
                     <p className="mt-1 text-xs text-[#B42318]">{errors.subdistrict}</p>
                   )}

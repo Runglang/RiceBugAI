@@ -35,6 +35,10 @@ public class Field {
 
     private String subdistrict;
 
+    private Double latitude;
+
+    private Double longitude;
+
 
     // Many Field -> 1 Member
     @ManyToOne

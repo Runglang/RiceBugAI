@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef, useSyncExternalStore, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Calculator, Loader2, Lock, Info, MapPin, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import { Calculator, Loader2, Lock, Info, MapPin, AlertCircle, ChevronLeft } from 'lucide-react';
 import Cookies from 'js-cookie';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -390,14 +391,23 @@ function ChemicalCalculatorContent() {
   return (
     <div className="min-h-screen bg-[#F7F8F7] text-[#3F4742] font-sans pb-16">
       <div className="max-w-2xl mx-auto px-6 pt-8">
-        {/* Page Header */}
-        <div className="pb-6 mb-8 border-b border-[#E3E6E4]">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
-            คำนวณปริมาณสารเคมีและอัตราผสม
-          </h1>
-          <p className="text-sm text-[#5A635D] mt-1">
-            คำนวณปริมาณสารเคมี อัตราการผสมต่อน้ำ และคำแนะนำการใช้ตามขนาดแปลงนาจริง
-          </p>
+        {/* Back Link & Page Header */}
+        <div className="mb-6">
+          <Link
+            href="/member/dashboard"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5A635D] hover:text-[#111813] transition-colors mb-3"
+          >
+            <ChevronLeft size={14} />
+            <span>กลับไปแดชบอร์ด</span>
+          </Link>
+          <div className="pb-4 border-b border-[#E3E6E4]">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1F1C]">
+              คำนวณปริมาณสารเคมีและอัตราผสม
+            </h1>
+            <p className="text-sm text-[#5A635D] mt-1">
+              คำนวณปริมาณสารเคมี อัตราการผสมต่อน้ำ และคำแนะนำการใช้ตามขนาดแปลงนาจริง
+            </p>
+          </div>
         </div>
 
         {/* Form Container */}

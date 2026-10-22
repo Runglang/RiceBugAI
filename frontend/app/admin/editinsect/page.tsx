@@ -56,7 +56,7 @@ const emptyFormData: InsectFormData = {
   description: '',
 };
 
-const MAX_NAME_LENGTH = 30;
+const MAX_NAME_LENGTH = 100;
 const MAX_IMAGE_COUNT = 5;
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 

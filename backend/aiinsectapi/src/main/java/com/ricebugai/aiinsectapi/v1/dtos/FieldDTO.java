@@ -28,6 +28,10 @@ public class FieldDTO {
 
     private String subdistrict;
 
+    private Double latitude;
+
+    private Double longitude;
+
     private String memberID;
 
     // 2 ตัวนี้คำนวณอัตโนมัติตอน response เท่านั้น (ไม่ต้องส่งมาตอน request)

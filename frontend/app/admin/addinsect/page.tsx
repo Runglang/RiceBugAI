@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ImageUpload from '@/app/components/shared/ImageUpload';
 import { Save, Loader2, CheckCircle2, AlertCircle, ChevronLeft } from 'lucide-react';
@@ -56,7 +57,7 @@ const initialFormData: InsectFormData = {
   description: '',
 };
 
-const MAX_NAME_LENGTH = 30;
+const MAX_NAME_LENGTH = 100;
 const MAX_IMAGE_COUNT = 5;
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -117,6 +118,7 @@ function validateInsectForm(data: InsectFormData, images: File[]): string | null
 }
 
 export default function InsectForm() {
+  const router = useRouter();
   const [formData, setFormData] = useState<InsectFormData>(initialFormData);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -279,10 +281,7 @@ export default function InsectForm() {
       }
 
       // Case 3: All images uploaded successfully, or no images selected
-      setStatus({
-        state: 'success',
-        message: 'บันทึกข้อมูลแมลงลงฐานข้อมูลสำเร็จ',
-      });
+      router.push('/admin/listadmininsects');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์';
       setStatus({ state: 'error', message });

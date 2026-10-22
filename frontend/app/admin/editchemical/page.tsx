@@ -62,8 +62,8 @@ const emptyFormState: FormState = {
 };
 
 // ---------- Validation ตาม Requirement ----------
-const CHEMICAL_NAME_MAX = 50;
-const ACTIVE_INGREDIENT_MAX = 50;
+const CHEMICAL_NAME_MAX = 100;
+const ACTIVE_INGREDIENT_MAX = 100;
 const PROPERTY_MAX = 1000;
 const MAX_CHEMICAL_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
